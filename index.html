@@ -4,7 +4,28 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Karczma Pod Smokiem — D&D 5e</title>
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+// Load PeerJS with fallback CDNs
+(function() {
+  const cdns = [
+    'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js',
+    'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js'
+  ];
+  let idx = 0;
+  function tryNext() {
+    if (idx >= cdns.length) {
+      document.getElementById('cdn-error').style.display = 'block';
+      return;
+    }
+    const s = document.createElement('script');
+    s.src = cdns[idx++];
+    s.onerror = tryNext;
+    document.head.appendChild(s);
+  }
+  tryNext();
+})();
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&display=swap');
 
@@ -818,6 +839,15 @@ input::placeholder { color: rgba(242,230,196,0.25); }
     <div class="crest-sub">D &amp; D 5 e  ·  M u l t i p l a y e r</div>
   </div>
 
+  <!-- CDN error banner (hidden by default) -->
+  <div id="cdn-error" style="display:none;max-width:480px;width:100%;margin-bottom:1rem">
+    <div style="background:rgba(139,26,26,0.25);border:1px solid rgba(200,80,80,0.4);border-radius:4px;padding:0.9rem;font-size:0.85rem;color:#e08080;line-height:1.5;text-align:center">
+      ⚠ Nie można załadować biblioteki połączeń (PeerJS).<br>
+      <strong>Sprawdź połączenie z internetem</strong> i odśwież stronę.<br>
+      <span style="font-size:0.75rem;opacity:0.7">Gra wymaga internetu do nawiązania połączeń między graczami.</span>
+    </div>
+  </div>
+
   <div class="panel">
     <div class="panel-title">Wybierz rolę</div>
 
@@ -859,6 +889,16 @@ input::placeholder { color: rgba(242,230,196,0.25); }
     </div>
 
     <div id="lobby-status"></div>
+
+    <div class="divider">— lub —</div>
+    <label style="display:block;cursor:pointer" title="Wczytaj zapisaną sesję jako GM">
+      <div style="border:1px dashed rgba(200,153,42,0.25);border-radius:4px;padding:0.65rem;text-align:center;transition:border-color 0.2s;font-family:'Cinzel',serif;font-size:0.72rem;color:rgba(200,153,42,0.5);letter-spacing:0.08em"
+        onmouseover="this.style.borderColor='rgba(200,153,42,0.5)';this.style.color='var(--gold)'"
+        onmouseout="this.style.borderColor='rgba(200,153,42,0.25)';this.style.color='rgba(200,153,42,0.5)'">
+        📂 Wczytaj zapisaną sesję
+      </div>
+      <input type="file" id="lobby-load-input" accept=".json" style="display:none" onchange="lobbyLoadSession(this)">
+    </label>
   </div>
 </div>
 
@@ -894,7 +934,10 @@ input::placeholder { color: rgba(242,230,196,0.25); }
         <div class="sec" style="margin-top:1rem">Narzędzia GM</div>
         <button class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:0.3rem" onclick="showTab('gm')">📋 Karty graczy</button>
         <button class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:0.3rem" onclick="openModal('init-modal')">⚡ Inicjatywa</button>
-        <button class="btn btn-ghost btn-sm" style="width:100%" onclick="gmSecretRoll()">🎲 Tajny rzut GM</button>
+        <button class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:0.3rem" onclick="gmSecretRoll()">🎲 Tajny rzut GM</button>
+        <div style="border-top:1px solid rgba(200,153,42,0.12);margin:0.6rem 0 0.5rem"></div>
+        <button class="btn btn-gold btn-sm" style="width:100%;margin-bottom:0.3rem" onclick="saveSession()">💾 Zapisz sesję</button>
+        <button class="btn btn-ghost btn-sm" style="width:100%" onclick="openModal('load-modal')">📂 Wczytaj sesję</button>
       </div>
 
       <div class="sec" style="margin-top:1rem">Twoje stany</div>
@@ -1062,6 +1105,35 @@ input::placeholder { color: rgba(242,230,196,0.25); }
   </div>
 </div>
 
+<!-- ═══ MODAL: LOAD SESSION ═══ -->
+<div class="overlay" id="load-modal">
+  <div class="modal" style="max-width:420px">
+    <button class="mx" onclick="closeModal('load-modal')">✕</button>
+    <h3>📂 Wczytaj Sesję</h3>
+    <p style="font-size:0.85rem;color:rgba(242,230,196,0.65);margin-bottom:1rem;font-style:italic">
+      Wybierz plik zapisu sesji (.json) aby przywrócić karty postaci, inicjatywę i notatki GM.
+    </p>
+    <label style="display:block;cursor:pointer">
+      <div style="border:2px dashed rgba(200,153,42,0.3);border-radius:4px;padding:1.5rem;text-align:center;transition:all 0.2s" id="drop-zone"
+        ondragover="event.preventDefault();this.style.borderColor='var(--gold)'"
+        ondragleave="this.style.borderColor='rgba(200,153,42,0.3)'"
+        ondrop="handleFileDrop(event)">
+        <div style="font-size:2rem;margin-bottom:0.4rem">📜</div>
+        <div style="font-family:'Cinzel',serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.1em">KLIKNIJ LUB PRZECIĄGNIJ PLIK</div>
+        <div style="font-size:0.72rem;color:rgba(242,230,196,0.4);margin-top:0.25rem">*.json — plik zapisu sesji</div>
+      </div>
+      <input type="file" id="load-file-input" accept=".json" style="display:none" onchange="handleFileLoad(this)">
+    </label>
+    <div id="load-preview" style="margin-top:0.9rem;display:none">
+      <div style="background:rgba(200,153,42,0.08);border:1px solid rgba(200,153,42,0.2);border-radius:4px;padding:0.75rem;font-size:0.82rem">
+        <div style="font-family:'Cinzel',serif;font-size:0.65rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.5rem">PODGLĄD ZAPISU</div>
+        <div id="load-preview-content"></div>
+      </div>
+      <button class="btn btn-blood" style="width:100%;margin-top:0.75rem" onclick="confirmLoad()">✓ Wczytaj tę sesję</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ MODAL: INITIATIVE ═══ -->
 <div class="overlay" id="init-modal">
   <div class="modal">
@@ -1145,53 +1217,22 @@ function genCode() {
 
 /* GM hosts — creates a PeerJS peer with a code-based ID */
 function hostSession() {
+  if (typeof Peer === 'undefined') {
+    lobbyStatus('⚠ Biblioteka połączeń nie załadowana. Odśwież stronę.', 'err'); return;
+  }
   const nick = document.getElementById('nick-in').value.trim() || 'GM';
   G.nick = nick;
   G.role = 'gm';
   const code = genCode();
   G.sessionCode = code;
-
-  lobbyStatus('<span class="loader"></span> Tworzę sesję...', 'info');
-
-  // PeerJS peer ID for GM = "dnd-" + code
-  // We use the public PeerJS cloud server (free, no setup)
-  peer = new Peer('dnd5e-' + code, {
-    debug: 0,
-    config: {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
-      ]
-    }
-  });
-
-  peer.on('open', id => {
-    G.myPeerId = id;
-    // Register self as player
-    G.players[nick] = { nick, peerId: id, isGM: true, sheet: null, fullSheet: null, conditions: [] };
-    lobbyStatus(`Sesja gotowa! Kod dla graczy: <strong style="font-size:1.4rem;letter-spacing:0.3em;color:var(--gold)">${code}</strong>`, 'ok');
-    launchGame();
-  });
-
-  peer.on('error', e => {
-    if (e.type === 'unavailable-id') {
-      // Code taken, retry with new one
-      peer.destroy();
-      peer = null;
-      hostSession();
-    } else {
-      lobbyStatus('Błąd: ' + e.message, 'err');
-    }
-  });
-
-  // Listen for incoming connections from players
-  peer.on('connection', conn => {
-    handlePlayerConnect(conn);
-  });
+  hostSessionWithCode(code);
 }
 
 /* Player joins — connects to GM's peer */
 function joinSession() {
+  if (typeof Peer === 'undefined') {
+    lobbyStatus('⚠ Biblioteka połączeń nie załadowana. Odśwież stronę.', 'err'); return;
+  }
   const nick = document.getElementById('nick-in').value.trim();
   const code = document.getElementById('code-in').value.trim().toUpperCase();
   if (!nick) { lobbyStatus('Podaj nick!', 'err'); return; }
@@ -2058,6 +2099,209 @@ function leaveGame() {
 }
 
 /* ══════════════════════════════════════════════════
+   SAVE / LOAD SESSION
+══════════════════════════════════════════════════ */
+
+function saveSession() {
+  // Collect chat log text
+  const chatLines = [];
+  document.querySelectorAll('#chat-log .msg').forEach(m => {
+    const bubble = m.querySelector('.bubble');
+    if (bubble) chatLines.push(bubble.textContent.trim());
+  });
+
+  // Collect all player full sheets
+  const savedPlayers = {};
+  Object.entries(G.players).forEach(([nick, p]) => {
+    savedPlayers[nick] = {
+      nick: p.nick,
+      isGM: p.isGM,
+      fullSheet: p.fullSheet || null,
+      sheet: p.sheet || null,
+      conditions: p.conditions || [],
+    };
+  });
+
+  // GM's own sheet from the form
+  const gmSheet = gatherSheet();
+
+  const saveData = {
+    version: 1,
+    savedAt: new Date().toISOString(),
+    sessionCode: G.sessionCode,
+    gmNick: G.nick,
+    players: savedPlayers,
+    gmSheet,
+    initiative: G.initiative,
+    initTurn: G.initTurn,
+    chatLog: chatLines,
+    notes: document.getElementById('cs-notes')?.value || '',
+  };
+
+  const blob = new Blob([JSON.stringify(saveData, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const date = new Date().toLocaleDateString('pl').replace(/\./g, '-');
+  a.href     = url;
+  a.download = `sesja-dnd-${G.sessionCode}-${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  appendSysMsg('💾 Sesja zapisana do pliku!');
+}
+
+/* ─── In-game load modal ─── */
+let pendingLoadData = null;
+
+function handleFileDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').style.borderColor = 'rgba(200,153,42,0.3)';
+  const file = e.dataTransfer?.files?.[0];
+  if (file) readSaveFile(file, 'in-game');
+}
+
+function handleFileLoad(input) {
+  const file = input?.files?.[0];
+  if (file) readSaveFile(file, 'in-game');
+  input.value = '';
+}
+
+function readSaveFile(file, context) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.version || !data.gmNick) throw new Error('Nieprawidłowy plik zapisu');
+      if (context === 'in-game') {
+        showLoadPreview(data);
+      } else {
+        // lobby context — auto-launch
+        applyLoadedSession(data, true);
+      }
+    } catch(err) {
+      alert('Błąd wczytywania pliku: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function showLoadPreview(data) {
+  pendingLoadData = data;
+  const savedAt  = new Date(data.savedAt).toLocaleString('pl');
+  const players  = Object.keys(data.players).filter(n => !data.players[n].isGM);
+  const content  = document.getElementById('load-preview-content');
+  content.innerHTML = `
+    <div style="display:grid;gap:0.3rem;color:rgba(242,230,196,0.8)">
+      <div><span style="color:var(--gold);font-family:'Cinzel',serif;font-size:0.65rem">DATA ZAPISU</span><br>${savedAt}</div>
+      <div><span style="color:var(--gold);font-family:'Cinzel',serif;font-size:0.65rem">MISTRZ GRY</span><br>${esc(data.gmNick)}</div>
+      <div><span style="color:var(--gold);font-family:'Cinzel',serif;font-size:0.65rem">GRACZE</span><br>${players.map(n=>esc(n)).join(', ') || '—'}</div>
+      <div><span style="color:var(--gold);font-family:'Cinzel',serif;font-size:0.65rem">INICJATYWA</span><br>${data.initiative?.length ? data.initiative.map(i=>esc(i.name)+' ('+i.val+')').join(', ') : 'brak'}</div>
+    </div>`;
+  document.getElementById('load-preview').style.display = 'block';
+}
+
+function confirmLoad() {
+  if (!pendingLoadData) return;
+  applyLoadedSession(pendingLoadData, false);
+  closeModal('load-modal');
+  pendingLoadData = null;
+}
+
+function applyLoadedSession(data, fromLobby) {
+  // Restore players
+  G.players    = data.players || {};
+  G.initiative = data.initiative || [];
+  G.initTurn   = data.initTurn || 0;
+
+  // Restore GM sheet
+  if (data.gmSheet) applySheet(data.gmSheet);
+
+  // Restore notes
+  if (data.notes && document.getElementById('cs-notes')) {
+    document.getElementById('cs-notes').value = data.notes;
+  }
+
+  renderPlayers();
+  renderInitSidebar();
+
+  // Restore chat log lines as system messages
+  if (data.chatLog?.length) {
+    document.getElementById('chat-log').innerHTML = '';
+    data.chatLog.forEach(line => appendSysMsg('📜 ' + line));
+  }
+
+  appendSysMsg(`📂 Wczytano sesję z ${new Date(data.savedAt).toLocaleString('pl')}`);
+
+  if (fromLobby) {
+    // Auto-launch as GM with restored code
+    G.nick        = data.gmNick;
+    G.role        = 'gm';
+    G.sessionCode = data.sessionCode || genCode();
+    hostSessionWithCode(G.sessionCode);
+  }
+}
+
+/* ─── Lobby load ─── */
+function lobbyLoadSession(input) {
+  const file = input?.files?.[0];
+  if (!file) return;
+  const nick = document.getElementById('nick-in').value.trim();
+  // pre-fill nick from save if not set
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!nick) document.getElementById('nick-in').value = data.gmNick || '';
+      readSaveFile(file, 'lobby');
+    } catch(err) { alert('Błąd wczytywania: ' + err.message); }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+/* Modified hostSession to accept an existing code */
+function hostSessionWithCode(code) {
+  const nick = G.nick || document.getElementById('nick-in').value.trim() || 'GM';
+  G.nick = nick;
+  G.role = 'gm';
+  G.sessionCode = code;
+
+  lobbyStatus('<span class="loader"></span> Tworzę sesję...', 'info');
+
+  peer = new Peer('dnd5e-' + code, {
+    debug: 0,
+    config: { iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' }
+    ]}
+  });
+
+  peer.on('open', id => {
+    G.myPeerId = id;
+    if (!G.players[nick]) {
+      G.players[nick] = { nick, peerId: id, isGM: true, sheet: null, fullSheet: null, conditions: [] };
+    } else {
+      G.players[nick].peerId = id;
+    }
+    lobbyStatus(`Sesja wczytana! Kod: <strong style="font-size:1.4rem;letter-spacing:0.3em;color:var(--gold)">${code}</strong>`, 'ok');
+    launchGame();
+  });
+
+  peer.on('error', e => {
+    if (e.type === 'unavailable-id') {
+      const newCode = genCode();
+      G.sessionCode = newCode;
+      peer.destroy(); peer = null;
+      hostSessionWithCode(newCode);
+    } else {
+      lobbyStatus('Błąd: ' + e.message, 'err');
+    }
+  });
+
+  peer.on('connection', conn => { handlePlayerConnect(conn); });
+}
+
+/* ══════════════════════════════════════════════════
    UTILS
 ══════════════════════════════════════════════════ */
 function esc(s) {
@@ -2069,6 +2313,11 @@ function esc(s) {
 window.addEventListener('load',()=>{
   buildStatsRow();
   buildSkillsGrid();
+
+  // Wire up in-game load file input click
+  document.getElementById('drop-zone')?.addEventListener('click', ()=>{
+    document.getElementById('load-file-input').click();
+  });
 });
 </script>
 </body>
