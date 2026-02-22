@@ -1,0 +1,2075 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Karczma Pod Smokiem — D&D 5e</title>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&display=swap');
+
+/* ═══════════════════════════════════════════
+   ROOT & RESET
+═══════════════════════════════════════════ */
+:root {
+  --void:       #080604;
+  --deep:       #100d08;
+  --dark:       #1a1510;
+  --mid:        #2a2018;
+  --parch:      #f2e6c4;
+  --parch-dim:  #d9c99a;
+  --parch-dark: #b89e6a;
+  --blood:      #7a1515;
+  --blood-hi:   #a02020;
+  --ember:      #c4831a;
+  --ember-hi:   #e0a030;
+  --gold:       #c8992a;
+  --gold-hi:    #e8c050;
+  --gold-glow:  rgba(200,153,42,0.25);
+  --smoke:      rgba(242,230,196,0.06);
+  --ink:        #1a1208;
+  --r: 4px;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+html { height:100%; }
+
+body {
+  font-family: 'IM Fell English', Georgia, serif;
+  background: var(--void);
+  color: var(--parch);
+  min-height: 100vh;
+  overflow-x: hidden;
+  cursor: default;
+}
+
+/* Animated parchment grain bg */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 15% 40%, rgba(122,21,21,0.09) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 80% at 85% 70%, rgba(200,153,42,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 50% 10%, rgba(196,131,26,0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Flickering torch vignette */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background: radial-gradient(ellipse 70% 70% at 50% 50%, transparent 40%, rgba(8,6,4,0.7) 100%);
+  pointer-events: none;
+  animation: torchFlicker 4s ease-in-out infinite alternate;
+}
+
+@keyframes torchFlicker {
+  0%   { opacity: 0.8; }
+  30%  { opacity: 1.0; }
+  60%  { opacity: 0.85; }
+  100% { opacity: 0.95; }
+}
+
+/* ═══════════════════════════════════════════
+   SCREENS
+═══════════════════════════════════════════ */
+.screen {
+  position: relative; z-index: 1;
+  min-height: 100vh;
+}
+
+/* ═══════════════════════════════════════════
+   LOBBY
+═══════════════════════════════════════════ */
+#lobby {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 2rem 1rem; min-height: 100vh;
+}
+
+.crest {
+  text-align: center;
+  margin-bottom: 2.5rem;
+  animation: crестFadeIn 1.2s ease-out;
+}
+
+@keyframes crестFadeIn {
+  from { opacity:0; transform: translateY(-20px); }
+  to   { opacity:1; transform: none; }
+}
+
+.crest-ornament {
+  font-size: 1.4rem; color: var(--gold); opacity: 0.5;
+  letter-spacing: 0.5rem; display: block; margin-bottom: 0.4rem;
+}
+
+.crest h1 {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(1.8rem, 5vw, 4rem);
+  font-weight: 700;
+  background: linear-gradient(180deg, var(--gold-hi) 0%, var(--gold) 40%, var(--ember) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+  filter: drop-shadow(0 0 30px rgba(200,153,42,0.4));
+  line-height: 1.1; margin-bottom: 0.3rem;
+}
+
+.crest-sub {
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem; letter-spacing: 0.35em;
+  color: var(--parch-dark); text-transform: uppercase;
+}
+
+/* Tavern door panel */
+.panel {
+  background: linear-gradient(160deg, #1e1810 0%, #160f08 100%);
+  border: 1px solid rgba(200,153,42,0.25);
+  border-radius: var(--r);
+  padding: 2rem 2.2rem;
+  width: 100%; max-width: 480px;
+  box-shadow:
+    0 0 0 1px rgba(200,153,42,0.08),
+    0 2px 4px rgba(0,0,0,0.6),
+    0 8px 32px rgba(0,0,0,0.8),
+    inset 0 1px 0 rgba(200,153,42,0.15),
+    inset 0 0 40px rgba(0,0,0,0.3);
+  position: relative;
+  animation: panelRise 0.8s cubic-bezier(0.16,1,0.3,1) 0.3s both;
+}
+
+@keyframes panelRise {
+  from { opacity:0; transform: translateY(24px); }
+  to   { opacity:1; transform: none; }
+}
+
+/* Corner ornaments */
+.panel::before, .panel::after {
+  content: '❧';
+  position: absolute;
+  font-size: 1rem; color: var(--gold); opacity: 0.25;
+}
+.panel::before { top: 0.6rem; left: 0.8rem; }
+.panel::after  { bottom: 0.6rem; right: 0.8rem; transform: rotate(180deg); }
+
+.panel-title {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem; font-weight: 600;
+  color: var(--blood-hi);
+  text-align: center;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  margin-bottom: 1.6rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid rgba(200,153,42,0.15);
+  position: relative;
+}
+.panel-title::after {
+  content: '';
+  position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%);
+  width: 40px; height: 1px; background: var(--gold);
+}
+
+/* Role selector */
+.role-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 0.7rem; margin-bottom: 1.4rem;
+}
+
+.role-card {
+  border: 1px solid rgba(200,153,42,0.2);
+  border-radius: var(--r);
+  padding: 1rem 0.8rem;
+  text-align: center; cursor: pointer;
+  background: rgba(200,153,42,0.04);
+  transition: all 0.2s;
+  position: relative; overflow: hidden;
+}
+.role-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(200,153,42,0.08), transparent);
+  opacity: 0; transition: opacity 0.2s;
+}
+.role-card:hover::before, .role-card.sel::before { opacity: 1; }
+.role-card:hover, .role-card.sel {
+  border-color: rgba(200,153,42,0.55);
+  box-shadow: 0 0 12px rgba(200,153,42,0.15), inset 0 0 20px rgba(200,153,42,0.04);
+}
+.role-card.sel { border-color: var(--gold); }
+
+.role-icon  { font-size: 2rem; display: block; margin-bottom: 0.35rem; }
+.role-name  { font-family: 'Cinzel', serif; font-size: 0.82rem; font-weight: 600; color: var(--ember-hi); }
+.role-desc  { font-size: 0.75rem; color: var(--parch-dark); margin-top: 0.15rem; font-style: italic; }
+
+/* Form */
+.field { margin-bottom: 0.9rem; }
+.field-label {
+  font-family: 'Cinzel', serif; font-size: 0.65rem;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--gold); display: block; margin-bottom: 0.3rem;
+}
+
+input[type=text], input[type=number], select, textarea {
+  width: 100%;
+  background: rgba(8,6,4,0.6);
+  border: 1px solid rgba(200,153,42,0.2);
+  border-radius: var(--r);
+  color: var(--parch);
+  font-family: 'IM Fell English', serif;
+  font-size: 1rem;
+  padding: 0.55rem 0.8rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(200,153,42,0.15), inset 0 1px 4px rgba(0,0,0,0.4);
+}
+input::placeholder { color: rgba(242,230,196,0.25); }
+
+/* Code input — big digits */
+.code-input {
+  font-family: 'Cinzel', serif !important;
+  font-size: 2rem !important;
+  letter-spacing: 0.5em !important;
+  text-align: center !important;
+  text-transform: uppercase !important;
+  padding: 0.4rem 0.8rem !important;
+  background: rgba(0,0,0,0.5) !important;
+}
+
+/* Buttons */
+.btn {
+  font-family: 'Cinzel', serif;
+  font-weight: 600; letter-spacing: 0.1em;
+  border: none; border-radius: var(--r);
+  cursor: pointer; transition: all 0.18s;
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+}
+
+.btn-blood {
+  background: linear-gradient(180deg, #a01c1c 0%, var(--blood) 100%);
+  color: var(--parch);
+  border: 1px solid #5a0f0f;
+  box-shadow: 0 2px 8px rgba(122,21,21,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+  padding: 0.7rem 1.4rem; font-size: 0.88rem; width: 100%;
+}
+.btn-blood:hover {
+  background: linear-gradient(180deg, #c02424 0%, #a01c1c 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(122,21,21,0.6), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.btn-blood:active { transform: translateY(1px); }
+
+.btn-gold {
+  background: linear-gradient(180deg, var(--ember-hi) 0%, var(--ember) 100%);
+  color: var(--ink);
+  border: 1px solid #8a5010;
+  box-shadow: 0 2px 8px rgba(196,131,26,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+  padding: 0.6rem 1.2rem; font-size: 0.82rem;
+}
+.btn-gold:hover {
+  background: linear-gradient(180deg, #f0b840 0%, #d09030 100%);
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ember);
+  border: 1px solid rgba(200,153,42,0.25);
+  padding: 0.45rem 0.9rem; font-size: 0.75rem;
+}
+.btn-ghost:hover { background: rgba(200,153,42,0.08); border-color: var(--gold); }
+
+.btn-sm { padding: 0.3rem 0.65rem; font-size: 0.7rem; }
+
+.divider {
+  display: flex; align-items: center; gap: 0.7rem;
+  margin: 1rem 0; color: var(--parch-dark); font-size: 0.8rem; font-style: italic;
+}
+.divider::before, .divider::after {
+  content: ''; flex: 1;
+  border-top: 1px solid rgba(200,153,42,0.15);
+}
+
+/* Status / error */
+.status-msg {
+  text-align: center; font-size: 0.82rem; font-style: italic;
+  padding: 0.4rem; border-radius: var(--r); margin-top: 0.6rem;
+}
+.status-msg.err  { color: #e05050; background: rgba(139,26,26,0.15); border: 1px solid rgba(139,26,26,0.3); }
+.status-msg.ok   { color: #7ada70; background: rgba(45,90,39,0.15); border: 1px solid rgba(45,90,39,0.3); }
+.status-msg.info { color: var(--gold); background: rgba(200,153,42,0.08); border: 1px solid rgba(200,153,42,0.2); }
+
+/* ═══════════════════════════════════════════
+   TOP BAR
+═══════════════════════════════════════════ */
+#topbar {
+  display: none;
+  background: linear-gradient(90deg, #0d0900 0%, #180e06 50%, #0d0900 100%);
+  border-bottom: 1px solid rgba(200,153,42,0.3);
+  padding: 0.4rem 1rem;
+  align-items: center; justify-content: space-between; gap: 0.6rem;
+  position: sticky; top: 0; z-index: 200;
+  flex-shrink: 0;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.6);
+}
+
+.tb-brand {
+  font-family: 'Cinzel', serif; font-size: 0.9rem;
+  font-weight: 700; letter-spacing: 0.08em;
+  background: linear-gradient(90deg, var(--ember-hi), var(--gold));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  white-space: nowrap;
+}
+
+.badges { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+.badge {
+  font-family: 'Cinzel', serif; font-size: 0.62rem; letter-spacing: 0.07em;
+  padding: 0.18rem 0.5rem; border-radius: 2px;
+  background: rgba(200,153,42,0.1); border: 1px solid rgba(200,153,42,0.3); color: var(--gold);
+}
+.badge.gm { background: rgba(122,21,21,0.2); border-color: rgba(160,32,32,0.5); color: #e06060; }
+.badge.online { background: rgba(45,90,39,0.2); border-color: rgba(90,186,80,0.4); color: #7ada70; }
+.badge.code { cursor: pointer; }
+.badge.code:hover { border-color: var(--gold); }
+
+.tb-btns { display: flex; gap: 0.35rem; }
+
+/* ═══════════════════════════════════════════
+   GAME LAYOUT
+═══════════════════════════════════════════ */
+#game-wrap {
+  display: none;
+  flex-direction: column;
+  height: calc(100vh - 41px);
+}
+
+.game-grid {
+  display: grid;
+  grid-template-columns: 240px 1fr 270px;
+  flex: 1; min-height: 0;
+}
+
+@media (max-width: 1000px) { .game-grid { grid-template-columns: 200px 1fr; } #right-col { display:none; } }
+@media (max-width: 640px)  { .game-grid { grid-template-columns: 1fr; } #left-col  { display:none; } }
+
+/* ═══════════════════════════════════════════
+   COLUMNS
+═══════════════════════════════════════════ */
+.col {
+  overflow-y: auto;
+  height: calc(100vh - 41px);
+}
+.col::-webkit-scrollbar { width: 3px; }
+.col::-webkit-scrollbar-thumb { background: rgba(200,153,42,0.2); border-radius: 2px; }
+
+#left-col {
+  background: #0b0805;
+  border-right: 1px solid rgba(200,153,42,0.1);
+  padding: 0.8rem;
+}
+
+#center-col {
+  background: #0d0a06;
+  display: flex; flex-direction: column;
+  height: calc(100vh - 41px);
+  overflow: hidden;
+}
+
+#right-col {
+  background: #0b0805;
+  border-left: 1px solid rgba(200,153,42,0.1);
+  padding: 0.8rem;
+}
+
+/* Section headers */
+.sec {
+  font-family: 'Cinzel', serif; font-size: 0.62rem;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--gold); opacity: 0.7;
+  border-bottom: 1px solid rgba(200,153,42,0.12);
+  padding-bottom: 0.3rem; margin-bottom: 0.6rem;
+  margin-top: 1rem;
+}
+.sec:first-child { margin-top: 0; }
+
+/* Player pills */
+.pp {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.32rem 0.4rem; border-radius: 3px;
+  margin-bottom: 0.22rem;
+  border: 1px solid transparent; transition: all 0.15s;
+}
+.pp.clickable { cursor: pointer; }
+.pp.clickable:hover { background: rgba(200,153,42,0.07); border-color: rgba(200,153,42,0.2); }
+
+.av {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,0.12);
+  font-family: 'Cinzel', serif;
+}
+
+.pp-info { flex: 1; min-width: 0; }
+.pp-name { font-size: 0.85rem; color: var(--parch); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pp-class { font-family: 'Cinzel', serif; font-size: 0.62rem; color: var(--gold); opacity: 0.8; }
+.hp-track { height: 3px; background: rgba(0,0,0,0.5); border-radius: 2px; margin-top: 0.15rem; overflow: hidden; }
+.hp-fill { height: 100%; background: linear-gradient(90deg, #2d8b27, #5aba50); transition: width 0.4s; border-radius: 2px; }
+
+/* Connecting indicator */
+.connecting-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #7ada70; flex-shrink: 0;
+  box-shadow: 0 0 6px #7ada70;
+  animation: pulse 2s ease-in-out infinite;
+}
+.connecting-dot.dc { background: #e05050; box-shadow: 0 0 6px #e05050; animation: none; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* ═══════════════════════════════════════════
+   TABS (center)
+═══════════════════════════════════════════ */
+.tab-bar {
+  display: flex;
+  background: #0b0805;
+  border-bottom: 1px solid rgba(200,153,42,0.15);
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+.tab-bar::-webkit-scrollbar { height: 0; }
+
+.tab {
+  font-family: 'Cinzel', serif; font-size: 0.7rem;
+  letter-spacing: 0.08em; padding: 0.5rem 0.85rem;
+  cursor: pointer; color: rgba(200,153,42,0.4);
+  border-bottom: 2px solid transparent; border: none;
+  background: none; white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s; flex-shrink: 0;
+}
+.tab:hover { color: var(--gold); }
+.tab.on { color: var(--gold); border-bottom: 2px solid var(--gold); }
+
+.tab-pane { display: none; flex: 1; flex-direction: column; min-height: 0; overflow: hidden; }
+.tab-pane.on { display: flex; }
+
+/* ═══════════════════════════════════════════
+   CHAT
+═══════════════════════════════════════════ */
+.chat-log {
+  flex: 1; overflow-y: auto; padding: 0.8rem;
+  display: flex; flex-direction: column; gap: 0.35rem;
+}
+.chat-log::-webkit-scrollbar { width: 3px; }
+.chat-log::-webkit-scrollbar-thumb { background: rgba(200,153,42,0.15); }
+
+.msg { display: flex; flex-direction: column; max-width: 86%; animation: msgIn 0.18s ease-out; }
+@keyframes msgIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:none} }
+
+.msg.sys  { align-self: center; text-align: center; max-width: 100%; }
+.msg.them { align-self: flex-start; }
+.msg.me   { align-self: flex-end; }
+.msg.gm-msg { align-self: flex-start; }
+
+.bubble {
+  padding: 0.42rem 0.72rem; border-radius: 4px;
+  font-size: 0.9rem; line-height: 1.45;
+}
+.msg.sys .bubble {
+  background: rgba(200,153,42,0.07); border: 1px solid rgba(200,153,42,0.18);
+  color: var(--gold); font-family: 'Cinzel', serif; font-size: 0.68rem;
+  letter-spacing: 0.04em; padding: 0.28rem 0.8rem; border-radius: 20px;
+}
+.msg.them .bubble, .msg.gm-msg .bubble {
+  background: rgba(122,21,21,0.2); border: 1px solid rgba(122,21,21,0.3);
+  color: var(--parch); border-radius: 4px 12px 12px 4px;
+}
+.msg.me .bubble {
+  background: rgba(45,90,39,0.2); border: 1px solid rgba(45,90,39,0.35);
+  color: var(--parch); border-radius: 12px 4px 4px 12px;
+}
+.msg.roll .bubble {
+  background: rgba(200,153,42,0.1) !important;
+  border: 1px solid rgba(200,153,42,0.3) !important;
+  color: var(--gold) !important; font-family: 'Cinzel', serif; font-size: 0.8rem;
+  border-radius: 4px !important;
+}
+.msg.crit .bubble { background: rgba(200,200,42,0.15) !important; color: #f0e040 !important; border-color: rgba(200,200,42,0.4) !important; }
+.msg.fumble .bubble { background: rgba(139,26,26,0.25) !important; color: #e05050 !important; border-color: rgba(139,26,26,0.4) !important; }
+
+.msg-meta {
+  font-size: 0.62rem; color: rgba(242,230,196,0.3);
+  margin-top: 0.1rem; font-family: 'Cinzel', serif;
+}
+
+.chat-input-bar {
+  display: flex; gap: 0.4rem; align-items: flex-end;
+  padding: 0.55rem 0.8rem; background: #0b0805;
+  border-top: 1px solid rgba(200,153,42,0.12);
+  flex-shrink: 0;
+}
+.chat-input-bar textarea {
+  flex: 1; min-height: 36px; max-height: 100px; resize: none;
+  background: rgba(0,0,0,0.4); border-color: rgba(200,153,42,0.15);
+  font-size: 0.9rem; padding: 0.42rem 0.65rem;
+  color: var(--parch);
+}
+.chat-input-bar textarea::placeholder { color: rgba(242,230,196,0.2); }
+
+/* ═══════════════════════════════════════════
+   CHARACTER SHEET
+═══════════════════════════════════════════ */
+.sheet-wrap {
+  flex: 1; overflow-y: auto; padding: 1rem;
+}
+.sheet-wrap::-webkit-scrollbar { width: 3px; }
+.sheet-wrap::-webkit-scrollbar-thumb { background: rgba(200,153,42,0.15); }
+
+.sheet {
+  background: var(--parch);
+  border: 2px solid var(--parch-dark);
+  border-radius: var(--r);
+  padding: 1.3rem;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+  position: relative;
+  color: var(--ink);
+}
+.sheet::before {
+  content: '';
+  position: absolute; inset: 7px;
+  border: 1px solid rgba(185,158,106,0.4);
+  pointer-events: none; border-radius: 2px;
+}
+
+.sheet h2 {
+  font-family: 'Cinzel', serif; font-size: 1.1rem;
+  color: var(--blood); text-align: center;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px solid var(--parch-dark);
+  margin-bottom: 0.85rem;
+  letter-spacing: 0.08em;
+}
+
+.sg { /* sheet grid */
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 0.4rem; margin-bottom: 0.75rem;
+}
+.sf { display: flex; flex-direction: column; gap: 0.12rem; }
+.sf label { font-family: 'Cinzel', serif; font-size: 0.58rem; color: var(--blood); letter-spacing: 0.1em; text-transform: uppercase; }
+.sf input, .sf select {
+  background: transparent; color: var(--ink);
+  border: none; border-bottom: 1px solid var(--parch-dark);
+  border-radius: 0; padding: 0.12rem 0; font-size: 0.9rem;
+  font-family: 'IM Fell English', serif;
+}
+.sf input:focus { box-shadow: none; border-bottom-color: var(--blood); }
+
+.sh-title {
+  font-family: 'Cinzel', serif; font-size: 0.6rem; color: var(--blood);
+  letter-spacing: 0.14em; text-transform: uppercase;
+  border-bottom: 1px solid var(--parch-dark);
+  padding-bottom: 0.22rem; margin: 0.75rem 0 0.42rem;
+}
+
+/* STATS */
+.stats-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.4rem; }
+@media (max-width: 500px) { .stats-row { grid-template-columns: repeat(3, 1fr); } }
+
+.stat-box {
+  border: 1.5px solid var(--parch-dark);
+  border-radius: 4px; text-align: center;
+  padding: 0.4rem 0.2rem;
+  background: rgba(255,255,255,0.25);
+  cursor: pointer; transition: all 0.15s;
+}
+.stat-box:hover { border-color: var(--blood); background: rgba(122,21,21,0.08); }
+.sn { font-family: 'Cinzel', serif; font-size: 0.52rem; color: var(--blood); letter-spacing: 0.08em; display: block; }
+.sm { font-family: 'Cinzel', serif; font-size: 1.25rem; font-weight: 700; color: var(--ink); display: block; }
+.ss {
+  width: 34px !important; text-align: center !important; font-size: 0.78rem !important;
+  border: none !important; border-bottom: 1px solid var(--parch-dark) !important;
+  border-radius: 0 !important; padding: 0 !important; background: transparent !important;
+  margin: 0 auto !important; display: block;
+}
+
+/* HP row */
+.hp-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.4rem; }
+.hp-box {
+  border: 1.5px solid var(--parch-dark); border-radius: 4px;
+  text-align: center; padding: 0.3rem;
+  background: rgba(255,255,255,0.22);
+}
+.hp-lbl { font-family: 'Cinzel', serif; font-size: 0.5rem; color: var(--blood); letter-spacing: 0.07em; display: block; margin-bottom: 0.1rem; }
+.hp-box input {
+  border: none; border-bottom: 1px solid var(--parch-dark);
+  width: 100%; text-align: center; padding: 0; border-radius: 0;
+  background: transparent; font-size: 1.05rem; font-weight: 600;
+  font-family: 'Cinzel', serif; color: var(--ink);
+}
+
+/* SKILLS */
+.skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.12rem; }
+.sk-row {
+  display: flex; align-items: center; gap: 0.3rem;
+  font-size: 0.78rem; padding: 0.1rem 0; cursor: pointer;
+  transition: color 0.12s; color: var(--ink);
+}
+.sk-row:hover { color: var(--blood); }
+.pd {
+  width: 8px; height: 8px; border: 1.5px solid var(--parch-dark);
+  border-radius: 50%; flex-shrink: 0; transition: background 0.12s;
+}
+.pd.on { background: var(--blood); border-color: var(--blood); }
+.sv { font-family: 'Cinzel', serif; font-size: 0.66rem; color: var(--blood); margin-left: auto; min-width: 20px; text-align: right; }
+
+.sh-textarea {
+  width: 100%; background: rgba(255,255,255,0.25) !important;
+  border: 1px solid var(--parch-dark) !important;
+  font-size: 0.85rem !important; min-height: 65px;
+  color: var(--ink) !important; padding: 0.32rem !important;
+  border-radius: 2px !important; margin-top: 0.22rem !important;
+  font-family: 'IM Fell English', serif !important;
+  resize: vertical;
+}
+
+/* ═══════════════════════════════════════════
+   DICE PANEL
+═══════════════════════════════════════════ */
+.dice-panel { padding: 0.8rem; overflow-y: auto; flex: 1; }
+.dice-panel::-webkit-scrollbar { width: 3px; }
+
+.dice-grid {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  gap: 0.4rem; margin-bottom: 0.8rem;
+}
+.die {
+  aspect-ratio: 1;
+  background: linear-gradient(145deg, #1e1810, #100d08);
+  border: 1px solid rgba(200,153,42,0.22);
+  border-radius: var(--r); color: var(--gold);
+  font-family: 'Cinzel', serif; font-size: 0.8rem;
+  cursor: pointer; transition: all 0.15s;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 0.05rem;
+}
+.die:hover {
+  border-color: var(--gold); background: linear-gradient(145deg, #2a1c0a, #18120a);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(200,153,42,0.2);
+}
+.die:active { transform: translateY(0); }
+.die-icon { font-size: 1.15rem; }
+
+.roll-result {
+  background: rgba(200,153,42,0.06);
+  border: 1px solid rgba(200,153,42,0.22);
+  border-radius: var(--r); padding: 0.65rem;
+  text-align: center; margin-bottom: 0.8rem;
+  min-height: 55px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.rn {
+  font-family: 'Cinzel', serif; font-size: 2.2rem; font-weight: 700;
+  color: var(--gold); line-height: 1;
+  text-shadow: 0 0 20px rgba(200,153,42,0.4);
+  transition: color 0.2s;
+}
+.rd { font-family: 'Cinzel', serif; font-size: 0.62rem; color: rgba(200,153,42,0.5); margin-top: 0.12rem; letter-spacing: 0.08em; }
+
+.mod-row { display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.6rem; flex-wrap: wrap; }
+.mod-row label { font-family: 'Cinzel', serif; font-size: 0.62rem; color: rgba(200,153,42,0.6); white-space: nowrap; }
+.mod-row input { background: rgba(0,0,0,0.4); border-color: rgba(200,153,42,0.15); color: var(--gold); text-align: center; width: 48px; padding: 0.35rem; font-size: 0.9rem; }
+
+.adv-row { display: flex; gap: 0.4rem; margin-bottom: 0.8rem; }
+
+.rh-item {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.75rem; padding: 0.2rem 0.42rem;
+  background: rgba(255,255,255,0.02); border-radius: 2px;
+  color: rgba(242,230,196,0.45); margin-bottom: 0.2rem;
+}
+.rh-val { font-family: 'Cinzel', serif; color: var(--gold); font-weight: 600; }
+
+/* ═══════════════════════════════════════════
+   GM PANEL
+═══════════════════════════════════════════ */
+.gm-panel { flex: 1; overflow-y: auto; padding: 0.9rem; }
+.gm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 0.75rem; }
+
+.mc {
+  background: var(--parch); border: 1.5px solid var(--parch-dark);
+  border-radius: var(--r); padding: 0.85rem; cursor: pointer;
+  transition: all 0.18s; color: var(--ink);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.mc:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.4); }
+.mc-name { font-family: 'Cinzel', serif; font-size: 0.92rem; color: var(--blood); font-weight: 600; }
+.mc-class { font-size: 0.8rem; color: #666; margin-bottom: 0.4rem; }
+.mc-badges { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.35rem; }
+.mc-badge {
+  background: rgba(122,21,21,0.08); border: 1px solid rgba(122,21,21,0.18);
+  border-radius: 3px; padding: 0.1rem 0.35rem;
+  font-size: 0.62rem; font-family: 'Cinzel', serif; color: var(--blood);
+}
+
+/* ═══════════════════════════════════════════
+   RIGHT SIDEBAR
+═══════════════════════════════════════════ */
+.init-list { list-style: none; }
+.init-item {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.3rem 0.42rem; border-bottom: 1px solid rgba(200,153,42,0.07);
+  font-size: 0.82rem; color: var(--parch);
+}
+.init-item.cur { background: rgba(200,153,42,0.1); border-radius: 3px; }
+.iv { font-family: 'Cinzel', serif; color: var(--gold); font-weight: 700; min-width: 22px; text-align: right; }
+
+.cond-wrap { display: flex; flex-wrap: wrap; gap: 0.22rem; margin-top: 0.25rem; }
+.ctag {
+  background: rgba(122,21,21,0.18); border: 1px solid rgba(122,21,21,0.3);
+  color: #e06060; font-size: 0.62rem; padding: 0.07rem 0.35rem;
+  border-radius: 10px; font-family: 'Cinzel', serif; cursor: pointer;
+}
+.ctag:hover { background: rgba(122,21,21,0.35); }
+
+.qref { font-size: 0.73rem; color: rgba(242,230,196,0.55); line-height: 1.75; }
+.qref span { color: var(--gold); }
+
+/* ═══════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════ */
+.overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+  z-index: 300; display: none;
+  align-items: center; justify-content: center; padding: 1rem;
+}
+.overlay.open { display: flex; }
+
+.modal {
+  background: linear-gradient(160deg, #1e1810 0%, #160f08 100%);
+  border: 1px solid rgba(200,153,42,0.3);
+  border-radius: var(--r); padding: 1.4rem;
+  max-width: 560px; width: 100%; max-height: 92vh; overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.9), inset 0 1px 0 rgba(200,153,42,0.1);
+  position: relative; color: var(--parch);
+}
+.modal h3 {
+  font-family: 'Cinzel', serif; font-size: 0.95rem; color: var(--ember-hi);
+  margin-bottom: 0.9rem; padding-bottom: 0.45rem;
+  border-bottom: 1px solid rgba(200,153,42,0.2);
+  letter-spacing: 0.1em;
+}
+.mx {
+  position: absolute; top: 0.6rem; right: 0.65rem;
+  background: none; border: none; font-size: 1.1rem;
+  cursor: pointer; color: var(--ember); opacity: 0.5;
+}
+.mx:hover { opacity: 1; }
+
+/* Sheet modal uses parchment */
+.modal.parch-modal {
+  background: var(--parch); color: var(--ink); border-color: var(--parch-dark);
+}
+.modal.parch-modal h3 { color: var(--blood); border-bottom-color: var(--parch-dark); }
+.modal.parch-modal .mx { color: var(--blood); }
+
+/* ═══════════════════════════════════════════
+   MISC
+═══════════════════════════════════════════ */
+@keyframes spinIn { from{transform:rotate(0deg) scale(1.2)} to{transform:rotate(360deg) scale(1)} }
+.spin { animation: spinIn 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+
+.loader {
+  display: inline-block; width: 16px; height: 16px;
+  border: 2px solid rgba(200,153,42,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Connecting screen */
+#connecting-screen {
+  display: none; position: fixed; inset: 0; z-index: 400;
+  background: rgba(8,6,4,0.95);
+  flex-direction: column; align-items: center; justify-content: center; gap: 1rem;
+}
+#connecting-screen.show { display: flex; }
+.conn-loader { width: 48px; height: 48px; border: 3px solid rgba(200,153,42,0.15); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.9s linear infinite; }
+.conn-text { font-family: 'Cinzel', serif; color: var(--gold); letter-spacing: 0.15em; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<!-- ═══ CONNECTING OVERLAY ═══ -->
+<div id="connecting-screen">
+  <div class="conn-loader"></div>
+  <div class="conn-text" id="conn-text">Łączę z sesją...</div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     LOBBY
+═══════════════════════════════════════════ -->
+<div id="lobby" class="screen">
+  <div class="crest">
+    <span class="crest-ornament">⚔ ✦ ⚔</span>
+    <h1>Karczma<br>Pod Smokiem</h1>
+    <div class="crest-sub">D &amp; D 5 e  ·  M u l t i p l a y e r</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Wybierz rolę</div>
+
+    <div class="role-grid">
+      <div class="role-card sel" id="rc-gm" onclick="pickRole('gm')">
+        <span class="role-icon">👑</span>
+        <span class="role-name">Mistrz Gry</span>
+        <span class="role-desc">Tworzysz sesję</span>
+      </div>
+      <div class="role-card" id="rc-pl" onclick="pickRole('player')">
+        <span class="role-icon">⚔️</span>
+        <span class="role-name">Gracz</span>
+        <span class="role-desc">Dołączasz do sesji</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Twój nick / imię</label>
+      <input type="text" id="nick-in" placeholder="Jak masz na imię..." maxlength="20">
+    </div>
+
+    <!-- GM section -->
+    <div id="gm-section">
+      <button class="btn btn-gold" style="width:100%; margin-top:0.3rem" onclick="hostSession()">
+        ✦ Utwórz sesję &amp; wygeneruj kod
+      </button>
+    </div>
+
+    <!-- Player section -->
+    <div id="pl-section" style="display:none">
+      <div class="field" style="margin-top:0.3rem">
+        <label class="field-label">4-cyfrowy kod sesji</label>
+        <input type="text" id="code-in" class="code-input" placeholder="····" maxlength="4"
+          oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
+      </div>
+      <button class="btn btn-blood" style="margin-top:0.3rem" onclick="joinSession()">
+        → Wkrocz do Karczmy
+      </button>
+    </div>
+
+    <div id="lobby-status"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     TOP BAR
+═══════════════════════════════════════════ -->
+<div id="topbar">
+  <div class="tb-brand">⚔ Karczma Pod Smokiem</div>
+  <div class="badges">
+    <span class="badge gm" id="b-role">GM</span>
+    <span class="badge" id="b-nick">—</span>
+    <span class="badge online code" id="b-code" onclick="copyCode()" title="Kliknij aby skopiować kod">📜 —</span>
+    <span class="badge" id="b-count">👤 1</span>
+  </div>
+  <div class="tb-btns">
+    <button class="btn btn-ghost btn-sm" onclick="openModal('init-modal')">⚡ Init</button>
+    <button class="btn btn-ghost btn-sm" onclick="leaveGame()">← Wyjdź</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     GAME
+═══════════════════════════════════════════ -->
+<div id="game-wrap">
+  <div class="game-grid">
+
+    <!-- LEFT COL -->
+    <div class="col" id="left-col">
+      <div class="sec">Gracze w sesji</div>
+      <div id="players-list"></div>
+
+      <div id="gm-tools-sec" style="display:none">
+        <div class="sec" style="margin-top:1rem">Narzędzia GM</div>
+        <button class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:0.3rem" onclick="showTab('gm')">📋 Karty graczy</button>
+        <button class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:0.3rem" onclick="openModal('init-modal')">⚡ Inicjatywa</button>
+        <button class="btn btn-ghost btn-sm" style="width:100%" onclick="gmSecretRoll()">🎲 Tajny rzut GM</button>
+      </div>
+
+      <div class="sec" style="margin-top:1rem">Twoje stany</div>
+      <div class="cond-wrap" id="my-conds"></div>
+      <select id="cond-sel" style="font-size:0.75rem;margin-top:0.4rem;color:var(--parch)">
+        <option value="">Dodaj stan...</option>
+        <option>Oślepiony</option><option>Ogłuszony</option><option>Spętany</option>
+        <option>Przerażony</option><option>Zatruty</option><option>Niewidzialny</option>
+        <option>Leżący</option><option>Unieszkodliwiony</option><option>Nieprzytomny</option>
+        <option>Zauroczony</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:0.3rem" onclick="addCond()">+ Dodaj stan</button>
+    </div>
+
+    <!-- CENTER COL -->
+    <div id="center-col">
+      <div class="tab-bar">
+        <button class="tab on" data-t="chat" onclick="showTab('chat',this)">💬 Czat</button>
+        <button class="tab" data-t="sheet" onclick="showTab('sheet',this)">📜 Postać</button>
+        <button class="tab" data-t="dice" onclick="showTab('dice',this)">🎲 Kości</button>
+        <button class="tab gm-tab" data-t="gm" onclick="showTab('gm',this)" style="display:none">👑 GM</button>
+      </div>
+
+      <!-- CHAT -->
+      <div class="tab-pane on" id="pane-chat">
+        <div class="chat-log" id="chat-log"></div>
+        <div class="chat-input-bar">
+          <textarea id="chat-in" placeholder="Napisz... (/roll 2k6+3)" rows="1"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
+          <button class="btn btn-gold btn-sm" onclick="sendChat()">Wyślij</button>
+        </div>
+      </div>
+
+      <!-- SHEET -->
+      <div class="tab-pane" id="pane-sheet">
+        <div class="sheet-wrap">
+          <div class="sheet">
+            <h2>⚔ Karta Postaci ⚔</h2>
+            <div class="sg">
+              <div class="sf"><label>Imię postaci</label><input id="cs-name" placeholder="Aragorn..."></div>
+              <div class="sf"><label>Klasa & Poziom</label><input id="cs-class" placeholder="Wojownik 5"></div>
+              <div class="sf"><label>Rasa</label><input id="cs-race" placeholder="Człowiek"></div>
+              <div class="sf"><label>Tło</label><input id="cs-bg" placeholder="Szlachcic"></div>
+              <div class="sf"><label>Premia biegłości</label><input id="cs-prof" type="number" value="2" min="2" max="6" onchange="updateSkills()"></div>
+              <div class="sf"><label>Prędkość</label><input id="cs-speed" placeholder="30 stóp"></div>
+            </div>
+
+            <div class="sh-title">⚔ Cechy główne</div>
+            <div class="stats-row" id="stats-row"></div>
+
+            <div class="sh-title">❤ Punkty zdrowia</div>
+            <div class="hp-row">
+              <div class="hp-box"><span class="hp-lbl">MAKS HP</span><input id="cs-hpmax" type="number" value="10" min="0" onchange="syncHP()"></div>
+              <div class="hp-box"><span class="hp-lbl">OBECNE HP</span><input id="cs-hpcur" type="number" value="10" min="0" onchange="syncHP()"></div>
+              <div class="hp-box"><span class="hp-lbl">TYMCZ. HP</span><input id="cs-hptmp" type="number" value="0" min="0"></div>
+            </div>
+            <div class="hp-row" style="margin-top:0.4rem">
+              <div class="hp-box"><span class="hp-lbl">KL. PANCERZA</span><input id="cs-ac" type="number" value="10" min="0"></div>
+              <div class="hp-box"><span class="hp-lbl">INICJATYWA</span><input id="cs-init" value="+0"></div>
+              <div class="hp-box"><span class="hp-lbl">RZUTY OBR.</span><input id="cs-saves" placeholder="Kon, Sił..."></div>
+            </div>
+
+            <div class="sh-title">🎯 Umiejętności</div>
+            <div class="skills-grid" id="skills-grid"></div>
+
+            <div class="sh-title">🗡 Ataki & Zaklęcia</div>
+            <textarea id="cs-attacks" class="sh-textarea" placeholder="Miecz długi: +5 trafienie, 1k8+3 cios..."></textarea>
+
+            <div class="sh-title">🎒 Ekwipunek</div>
+            <textarea id="cs-equip" class="sh-textarea" placeholder="Miecz długi, Tarcza, Kolczuga..."></textarea>
+
+            <div class="sh-title">📖 Zdolności & Cechy</div>
+            <textarea id="cs-feats" class="sh-textarea" placeholder="Drugi oddech (1/odpoczynek): 1k10+5..."></textarea>
+
+            <div class="sh-title">📝 Notatki</div>
+            <textarea id="cs-notes" class="sh-textarea" placeholder="Notatki z sesji..." style="min-height:75px"></textarea>
+
+            <div style="margin-top:1rem;text-align:center">
+              <button class="btn btn-blood" style="max-width:280px" onclick="shareSheet()">
+                📤 Wyślij kartę do GM
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DICE -->
+      <div class="tab-pane" id="pane-dice">
+        <div class="dice-panel">
+          <div style="font-family:'Cinzel',serif;font-size:0.62rem;color:rgba(200,153,42,0.6);letter-spacing:0.15em;margin-bottom:0.6rem">🎲 RZUT KOŚCIĄ</div>
+          <div class="roll-result">
+            <div class="rn" id="rn">—</div>
+            <div class="rd" id="rd">Wybierz kość aby rzucić</div>
+          </div>
+          <div class="mod-row">
+            <label>ILOŚĆ:</label>
+            <input type="number" id="dc-cnt" value="1" min="1" max="20">
+            <label>MODYFIKATOR:</label>
+            <input type="number" id="dc-mod" value="0">
+          </div>
+          <div class="dice-grid">
+            <button class="die" onclick="rollDie(4)"><span class="die-icon">🔺</span>k4</button>
+            <button class="die" onclick="rollDie(6)"><span class="die-icon">🎲</span>k6</button>
+            <button class="die" onclick="rollDie(8)"><span class="die-icon">🔷</span>k8</button>
+            <button class="die" onclick="rollDie(10)"><span class="die-icon">💎</span>k10</button>
+            <button class="die" onclick="rollDie(12)"><span class="die-icon">⬡</span>k12</button>
+            <button class="die" onclick="rollDie(20)"><span class="die-icon">⭐</span>k20</button>
+            <button class="die" onclick="rollDie(100)"><span class="die-icon">🌀</span>k%</button>
+            <button class="die" onclick="customRoll()"><span class="die-icon">✏️</span>inne</button>
+          </div>
+          <div class="adv-row">
+            <button class="btn btn-gold btn-sm" style="flex:1" onclick="rollAdv()">Przewaga ↑</button>
+            <button class="btn btn-ghost btn-sm" style="flex:1" onclick="rollDis()">Niekorzyść ↓</button>
+          </div>
+          <div style="font-family:'Cinzel',serif;font-size:0.62rem;color:rgba(200,153,42,0.5);letter-spacing:0.12em;margin-bottom:0.4rem">HISTORIA</div>
+          <div id="rh"></div>
+        </div>
+      </div>
+
+      <!-- GM VIEW -->
+      <div class="tab-pane" id="pane-gm">
+        <div class="gm-panel">
+          <div style="font-family:'Cinzel',serif;font-size:0.78rem;color:var(--parch);margin-bottom:0.8rem;opacity:0.8">
+            👑 Widok Mistrza Gry — karty postaci graczy
+          </div>
+          <div class="gm-grid" id="gm-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COL -->
+    <div class="col" id="right-col">
+      <div class="sec">Szybkie rzuty</div>
+      <div class="dice-grid" style="grid-template-columns:repeat(3,1fr)">
+        <button class="die" onclick="qRoll(4,'k4')"><span class="die-icon">🔺</span>k4</button>
+        <button class="die" onclick="qRoll(6,'k6')"><span class="die-icon">🎲</span>k6</button>
+        <button class="die" onclick="qRoll(8,'k8')"><span class="die-icon">🔷</span>k8</button>
+        <button class="die" onclick="qRoll(10,'k10')"><span class="die-icon">💎</span>k10</button>
+        <button class="die" onclick="qRoll(12,'k12')"><span class="die-icon">⬡</span>k12</button>
+        <button class="die" onclick="qRoll(20,'k20')"><span class="die-icon">⭐</span>k20</button>
+      </div>
+
+      <div class="sec">Inicjatywa</div>
+      <ul class="init-list" id="init-sidebar">
+        <li class="init-item" style="color:rgba(242,230,196,0.3);font-size:0.75rem">Brak inicjatywy</li>
+      </ul>
+      <div style="display:flex;gap:0.3rem;margin-top:0.4rem">
+        <button class="btn btn-ghost btn-sm" style="flex:1" onclick="nextTurn()">→ Następna</button>
+        <button class="btn btn-ghost btn-sm" style="flex:1" onclick="clearInit()">Wyczyść</button>
+      </div>
+
+      <div class="sec">Tabela trudności</div>
+      <div class="qref">
+        <div><span>KS 10</span> = Łatwe</div>
+        <div><span>KS 15</span> = Średnie</div>
+        <div><span>KS 20</span> = Trudne</div>
+        <div><span>KS 25</span> = Bardzo trudne</div>
+        <div style="margin-top:0.3rem"><span>Przewaga</span> = 2k20 wyższy</div>
+        <div><span>Niekorzyść</span> = 2k20 niższy</div>
+        <div style="margin-top:0.3rem"><span>Krytyk</span> = k20=20 🎉</div>
+        <div><span>Pudło kryt.</span> = k20=1 💀</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ MODAL: INITIATIVE ═══ -->
+<div class="overlay" id="init-modal">
+  <div class="modal">
+    <button class="mx" onclick="closeModal('init-modal')">✕</button>
+    <h3>⚡ Kolejność Inicjatywy</h3>
+    <div id="init-editor"></div>
+    <div style="display:flex;gap:0.5rem;margin-top:1rem">
+      <button class="btn btn-blood" style="flex:1" onclick="saveInit()">Zapisz &amp; wyślij</button>
+      <button class="btn btn-ghost" style="flex:1" onclick="autoRollAll()">🎲 Auto-rzut dla wszystkich</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: FULL SHEET (GM) ═══ -->
+<div class="overlay" id="sheet-modal">
+  <div class="modal parch-modal" style="max-width:600px">
+    <button class="mx" onclick="closeModal('sheet-modal')">✕</button>
+    <h3 id="sheet-modal-title">Karta postaci</h3>
+    <div id="sheet-modal-body"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════ -->
+<script>
+/* ══════════════════════════════════════════════════
+   CONSTANTS
+══════════════════════════════════════════════════ */
+const SK = ['str','dex','con','int','wis','cha'];
+const SN = ['SIŁ','ZRE','BUD','INT','MĄD','CHA'];
+const SKILLS = [
+  {n:'Akrobatyka',s:'dex'},{n:'Atletyka',s:'str'},{n:'Blefowanie',s:'cha'},
+  {n:'Historia',s:'int'},{n:'Insight',s:'wis'},{n:'Intimidacja',s:'cha'},
+  {n:'Investigacja',s:'int'},{n:'Natura',s:'int'},{n:'Percepcja',s:'wis'},
+  {n:'Perswazja',s:'cha'},{n:'Religia',s:'int'},{n:'Skrytość',s:'dex'},
+  {n:'Tresura',s:'wis'},{n:'Przetrwanie',s:'wis'},{n:'Złodziejstwo',s:'dex'},
+  {n:'Lecznictwo',s:'wis'},{n:'Magia Ark.',s:'int'},
+];
+const AV_COLORS = ['#c0392b','#e67e22','#27ae60','#2980b9','#8e44ad','#16a085','#d35400','#c0392b','#1abc9c','#e74c3c'];
+
+/* ══════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════ */
+let peer = null;          // PeerJS instance
+let gmConn = null;        // player→GM connection
+let playerConns = {};     // GM's connections: {peerId: DataConnection}
+let G = {
+  role: 'gm',
+  nick: '',
+  sessionCode: '',
+  myPeerId: '',
+  players: {},            // {nick: {nick, peerId, isGM, sheet, fullSheet, conditions:[]}}
+  initiative: [],
+  initTurn: 0,
+  conditions: [],
+};
+
+/* ══════════════════════════════════════════════════
+   LOBBY
+══════════════════════════════════════════════════ */
+function pickRole(r) {
+  G.role = r;
+  document.getElementById('rc-gm').classList.toggle('sel', r==='gm');
+  document.getElementById('rc-pl').classList.toggle('sel', r==='player');
+  document.getElementById('gm-section').style.display = r==='gm' ? 'block' : 'none';
+  document.getElementById('pl-section').style.display = r==='player' ? 'block' : 'none';
+}
+pickRole('gm');
+
+function lobbyStatus(msg, type='info') {
+  const el = document.getElementById('lobby-status');
+  el.innerHTML = `<div class="status-msg ${type}">${msg}</div>`;
+}
+
+/* Generate a 4-char alphanumeric code */
+function genCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ2345679';
+  return Array.from({length:4}, ()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+}
+
+/* GM hosts — creates a PeerJS peer with a code-based ID */
+function hostSession() {
+  const nick = document.getElementById('nick-in').value.trim() || 'GM';
+  G.nick = nick;
+  G.role = 'gm';
+  const code = genCode();
+  G.sessionCode = code;
+
+  lobbyStatus('<span class="loader"></span> Tworzę sesję...', 'info');
+
+  // PeerJS peer ID for GM = "dnd-" + code
+  // We use the public PeerJS cloud server (free, no setup)
+  peer = new Peer('dnd5e-' + code, {
+    debug: 0,
+    config: {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
+    }
+  });
+
+  peer.on('open', id => {
+    G.myPeerId = id;
+    // Register self as player
+    G.players[nick] = { nick, peerId: id, isGM: true, sheet: null, fullSheet: null, conditions: [] };
+    lobbyStatus(`Sesja gotowa! Kod dla graczy: <strong style="font-size:1.4rem;letter-spacing:0.3em;color:var(--gold)">${code}</strong>`, 'ok');
+    launchGame();
+  });
+
+  peer.on('error', e => {
+    if (e.type === 'unavailable-id') {
+      // Code taken, retry with new one
+      peer.destroy();
+      peer = null;
+      hostSession();
+    } else {
+      lobbyStatus('Błąd: ' + e.message, 'err');
+    }
+  });
+
+  // Listen for incoming connections from players
+  peer.on('connection', conn => {
+    handlePlayerConnect(conn);
+  });
+}
+
+/* Player joins — connects to GM's peer */
+function joinSession() {
+  const nick = document.getElementById('nick-in').value.trim();
+  const code = document.getElementById('code-in').value.trim().toUpperCase();
+  if (!nick) { lobbyStatus('Podaj nick!', 'err'); return; }
+  if (code.length !== 4) { lobbyStatus('Kod sesji musi mieć 4 znaki!', 'err'); return; }
+
+  G.nick = nick;
+  G.role = 'player';
+  G.sessionCode = code;
+
+  showConnecting('Łączę z sesją ' + code + '...');
+
+  peer = new Peer({
+    debug: 0,
+    config: {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
+    }
+  });
+
+  peer.on('open', myId => {
+    G.myPeerId = myId;
+    const gmPeerId = 'dnd5e-' + code;
+    gmConn = peer.connect(gmPeerId, { reliable: true, metadata: { nick, isGM: false } });
+
+    gmConn.on('open', () => {
+      hideConnecting();
+      // Send join message to GM
+      send(gmConn, { type: 'join', nick, peerId: myId });
+      launchGame();
+    });
+
+    gmConn.on('data', data => handleData(data, null));
+
+    gmConn.on('error', e => {
+      hideConnecting();
+      lobbyStatus('Błąd połączenia: ' + e.message, 'err');
+    });
+
+    gmConn.on('close', () => {
+      appendSysMsg('⚠ Połączenie z GM zostało przerwane.');
+    });
+  });
+
+  peer.on('error', e => {
+    hideConnecting();
+    if (e.type === 'peer-unavailable') {
+      lobbyStatus('Nie znaleziono sesji o kodzie: ' + code + '. Sprawdź kod lub poproś GM aby był online.', 'err');
+    } else {
+      lobbyStatus('Błąd: ' + e.message, 'err');
+    }
+  });
+}
+
+/* GM handles new player connection */
+function handlePlayerConnect(conn) {
+  conn.on('open', () => {
+    const meta = conn.metadata || {};
+    const nick = meta.nick || 'Nieznany';
+
+    conn.on('data', data => handleData(data, conn));
+    conn.on('close', () => {
+      handlePlayerDisconnect(conn, nick);
+    });
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   GAME LAUNCH
+══════════════════════════════════════════════════ */
+function launchGame() {
+  document.getElementById('lobby').style.display = 'none';
+  document.getElementById('topbar').style.display = 'flex';
+  document.getElementById('game-wrap').style.display = 'flex';
+
+  document.getElementById('b-role').textContent = G.role==='gm' ? '👑 GM' : '⚔ Gracz';
+  document.getElementById('b-role').className = 'badge' + (G.role==='gm' ? ' gm' : '');
+  document.getElementById('b-nick').textContent = G.nick;
+  document.getElementById('b-code').textContent = '📜 ' + G.sessionCode;
+
+  if (G.role === 'gm') {
+    document.getElementById('gm-tools-sec').style.display = 'block';
+    document.querySelector('.gm-tab').style.display = 'block';
+    appendSysMsg(`Sesja otwarta. Kod: ${G.sessionCode} — przekaż go graczom!`);
+  } else {
+    appendSysMsg(`Dołączyłeś do sesji ${G.sessionCode}`);
+  }
+
+  buildStatsRow();
+  buildSkillsGrid();
+  loadLocalSheet();
+  renderPlayers();
+}
+
+/* ══════════════════════════════════════════════════
+   NETWORKING — SEND / RECEIVE
+══════════════════════════════════════════════════ */
+function send(conn, data) {
+  try { if (conn && conn.open) conn.send(data); } catch(e) {}
+}
+
+// GM broadcasts to all players
+function broadcast(data, exceptConn) {
+  Object.values(playerConns).forEach(c => {
+    if (c !== exceptConn) send(c, data);
+  });
+}
+
+// GM or player → relay through GM
+function sendToAll(data) {
+  if (G.role === 'gm') {
+    broadcast(data);
+    handleData(data, null); // process locally too
+  } else {
+    send(gmConn, { type: 'relay', payload: data });
+    handleData(data, null); // process locally
+  }
+}
+
+function handleData(data, fromConn) {
+  if (!data || !data.type) return;
+
+  switch(data.type) {
+
+    case 'join': {
+      // GM receives new player
+      const nick = data.nick;
+      const peerId = data.peerId;
+      playerConns[peerId] = fromConn;
+      G.players[nick] = { nick, peerId, isGM: false, sheet: null, fullSheet: null, conditions: [] };
+      renderPlayers();
+      // Send them current state
+      send(fromConn, { type: 'state', players: G.players, initiative: G.initiative, initTurn: G.initTurn });
+      // Broadcast join to all
+      const joinMsg = { type: 'sys-msg', text: `${nick} dołączył do sesji` };
+      broadcast(joinMsg, fromConn);
+      appendSysMsg(`${nick} dołączył do sesji`);
+      break;
+    }
+
+    case 'state': {
+      // Player receives full state from GM
+      G.players = data.players || {};
+      G.initiative = data.initiative || [];
+      G.initTurn = data.initTurn || 0;
+      renderPlayers();
+      renderInitSidebar();
+      break;
+    }
+
+    case 'relay': {
+      // GM receives relay from player — rebroadcast
+      if (G.role === 'gm' && data.payload) {
+        broadcast(data.payload, fromConn);
+        handleData(data.payload, fromConn);
+      }
+      break;
+    }
+
+    case 'chat': {
+      renderChatMsg(data);
+      break;
+    }
+
+    case 'roll': {
+      renderRollMsg(data);
+      break;
+    }
+
+    case 'sys-msg': {
+      appendSysMsg(data.text);
+      break;
+    }
+
+    case 'sheet-update': {
+      // Player shared their sheet with GM
+      const pnick = data.nick;
+      if (G.players[pnick]) {
+        G.players[pnick].fullSheet = data.sheet;
+        G.players[pnick].sheet = { hp_max: data.sheet.hp_max, hp_cur: data.sheet.hp_cur, class: data.sheet.class };
+      }
+      renderPlayers();
+      if (G.role === 'gm') {
+        // Broadcast updated player list to everyone
+        broadcast({ type: 'player-list', players: G.players });
+        appendSysMsg(`${pnick} udostępnił kartę postaci`);
+      }
+      break;
+    }
+
+    case 'player-list': {
+      G.players = data.players || {};
+      renderPlayers();
+      break;
+    }
+
+    case 'hp-update': {
+      // GM changed someone's HP
+      const pn = data.nick;
+      if (G.players[pn]) {
+        if (G.players[pn].sheet) G.players[pn].sheet.hp_cur = data.hp_cur;
+        if (G.players[pn].fullSheet) G.players[pn].fullSheet.hp_cur = data.hp_cur;
+      }
+      if (pn === G.nick) {
+        document.getElementById('cs-hpcur').value = data.hp_cur;
+      }
+      renderPlayers();
+      appendSysMsg(`GM zmienił HP ${pn}: ${data.hp_cur}/${data.hp_max}`);
+      break;
+    }
+
+    case 'initiative': {
+      G.initiative = data.list || [];
+      G.initTurn = data.turn || 0;
+      renderInitSidebar();
+      appendSysMsg('Kolejność inicjatywy została zaktualizowana');
+      break;
+    }
+
+    case 'next-turn': {
+      G.initTurn = data.turn;
+      renderInitSidebar();
+      if (G.initiative[G.initTurn]) {
+        appendSysMsg(`⚡ Tura: ${G.initiative[G.initTurn].name} (Init: ${G.initiative[G.initTurn].val})`);
+      }
+      break;
+    }
+
+    case 'conditions': {
+      if (data.nick === G.nick) {
+        G.conditions = data.conditions;
+        renderConditions();
+      }
+      break;
+    }
+  }
+}
+
+function handlePlayerDisconnect(conn, nick) {
+  // Find nick by conn
+  let foundNick = nick;
+  for (const [pid, c] of Object.entries(playerConns)) {
+    if (c === conn) {
+      // find who has this peerId
+      for (const [n, p] of Object.entries(G.players)) {
+        if (p.peerId === pid) { foundNick = n; break; }
+      }
+      delete playerConns[pid];
+      break;
+    }
+  }
+  appendSysMsg(`${foundNick} opuścił sesję`);
+  broadcast({ type: 'sys-msg', text: `${foundNick} opuścił sesję` });
+  renderPlayers();
+}
+
+/* ══════════════════════════════════════════════════
+   CHAT
+══════════════════════════════════════════════════ */
+function sendChat() {
+  const inp = document.getElementById('chat-in');
+  const txt = inp.value.trim();
+  if (!txt) return;
+  inp.value = '';
+
+  if (txt.startsWith('/roll')) {
+    parseAndRollCmd(txt.replace('/roll','').trim());
+    return;
+  }
+
+  const msg = { type: 'chat', nick: G.nick, text: txt, isGM: G.role==='gm', ts: Date.now() };
+  sendToAll(msg);
+}
+
+function renderChatMsg(msg) {
+  const log = document.getElementById('chat-log');
+  const d = document.createElement('div');
+  const isMe = msg.nick === G.nick;
+  const time = msg.ts ? new Date(msg.ts).toLocaleTimeString('pl',{hour:'2-digit',minute:'2-digit'}) : '';
+
+  d.className = 'msg ' + (isMe ? 'me' : msg.isGM ? 'gm-msg' : 'them');
+  d.innerHTML = `
+    <div class="bubble"><strong>${esc(msg.nick)}:</strong> ${esc(msg.text)}</div>
+    <div class="msg-meta">${time}</div>
+  `;
+  log.appendChild(d);
+  log.scrollTop = log.scrollHeight;
+}
+
+function appendSysMsg(text) {
+  const log = document.getElementById('chat-log');
+  const d = document.createElement('div');
+  d.className = 'msg sys';
+  d.innerHTML = `<div class="bubble">${esc(text)}</div>`;
+  log.appendChild(d);
+  log.scrollTop = log.scrollHeight;
+}
+
+/* ══════════════════════════════════════════════════
+   DICE
+══════════════════════════════════════════════════ */
+function getMod(s) { return Math.floor((s-10)/2); }
+function ms(m) { return (m>=0?'+':'')+m; }
+
+function rollDie(sides) {
+  const cnt = parseInt(document.getElementById('dc-cnt').value)||1;
+  const mod = parseInt(document.getElementById('dc-mod').value)||0;
+  execRoll(cnt, sides, mod);
+}
+
+function execRoll(cnt, sides, mod, label) {
+  const rolls = Array.from({length:cnt}, ()=>Math.floor(Math.random()*sides)+1);
+  const sum = rolls.reduce((a,b)=>a+b,0);
+  const total = sum+mod;
+  const dice = label || `${cnt}k${sides}${mod?(mod>0?'+'+mod:mod):''}`;
+
+  updateRollDisplay(total, dice, rolls, mod, sides);
+
+  const msg = { type:'roll', nick:G.nick, dice, rolls, total, modifier:mod, sides, isGM:G.role==='gm', ts:Date.now() };
+  sendToAll(msg);
+}
+
+function updateRollDisplay(total, dice, rolls, mod, sides) {
+  const el = document.getElementById('rn');
+  el.textContent = total;
+  el.classList.remove('spin'); void el.offsetWidth; el.classList.add('spin');
+
+  if (rolls.length===1 && sides && rolls[0]===sides) el.style.color='#f0e040';
+  else if (rolls.length===1 && rolls[0]===1) el.style.color='#e05050';
+  else el.style.color='var(--gold)';
+
+  let desc = `${dice}: [${rolls.join(', ')}]`;
+  if (mod) desc += ` ${mod>0?'+':''}${mod}`;
+  document.getElementById('rd').textContent = desc;
+
+  // history
+  const rh = document.getElementById('rh');
+  const item = document.createElement('div');
+  item.className='rh-item';
+  item.innerHTML=`<span>${esc(dice)}</span><span class="rh-val">${total}</span>`;
+  rh.insertBefore(item, rh.firstChild);
+  while(rh.children.length>8) rh.removeChild(rh.lastChild);
+}
+
+function renderRollMsg(msg) {
+  const log = document.getElementById('chat-log');
+  const d = document.createElement('div');
+  const time = msg.ts ? new Date(msg.ts).toLocaleTimeString('pl',{hour:'2-digit',minute:'2-digit'}) : '';
+  const isCrit = msg.rolls?.length===1 && msg.sides && msg.rolls[0]===msg.sides;
+  const isFumble = msg.rolls?.length===1 && msg.rolls[0]===1;
+
+  d.className = 'msg roll' + (isCrit?' crit':isFumble?' fumble':'') + (msg.nick===G.nick?' me':' them');
+
+  const detail = msg.rolls?.length>1 ? ` [${msg.rolls.join(', ')}]` : '';
+  const modPart = msg.modifier ? (msg.modifier>0?` +${msg.modifier}`:` ${msg.modifier}`) : '';
+
+  d.innerHTML = `
+    <div class="bubble">🎲 <strong>${esc(msg.nick)}</strong> — ${esc(msg.dice)}: <strong style="font-size:1.1em">${msg.total}</strong>${detail}${modPart}${isCrit?' 🎉':''}${isFumble?' 💀':''}</div>
+    <div class="msg-meta">${time}</div>
+  `;
+  log.appendChild(d);
+  log.scrollTop = log.scrollHeight;
+}
+
+async function rollAdv() {
+  const r1=Math.floor(Math.random()*20)+1, r2=Math.floor(Math.random()*20)+1;
+  const total=Math.max(r1,r2);
+  updateRollDisplay(total,'2k20↑',[r1,r2],0,20);
+  sendToAll({ type:'roll', nick:G.nick, dice:'2k20 (Przewaga)', rolls:[r1,r2], total, modifier:0, sides:20, isGM:G.role==='gm', ts:Date.now() });
+}
+
+function rollDis() {
+  const r1=Math.floor(Math.random()*20)+1, r2=Math.floor(Math.random()*20)+1;
+  const total=Math.min(r1,r2);
+  updateRollDisplay(total,'2k20↓',[r1,r2],0,20);
+  sendToAll({ type:'roll', nick:G.nick, dice:'2k20 (Niekorzyść)', rolls:[r1,r2], total, modifier:0, sides:20, isGM:G.role==='gm', ts:Date.now() });
+}
+
+function qRoll(sides, label) {
+  const r=Math.floor(Math.random()*sides)+1;
+  updateRollDisplay(r,label,[r],0,sides);
+  sendToAll({ type:'roll', nick:G.nick, dice:label, rolls:[r], total:r, modifier:0, sides, isGM:G.role==='gm', ts:Date.now() });
+}
+
+function customRoll() {
+  const expr=prompt('Wpisz wyrażenie kości (np. 3k6+2):');
+  if(expr) parseAndRollCmd(expr);
+}
+
+function parseAndRollCmd(expr) {
+  const m=expr.match(/^(\d*)k(\d+)([+-]\d+)?/i);
+  if(!m){alert('Format: Xk Y+Z, np. 2k6+3');return;}
+  execRoll(parseInt(m[1])||1, parseInt(m[2]), parseInt(m[3])||0);
+}
+
+function gmSecretRoll() {
+  const r=Math.floor(Math.random()*20)+1;
+  updateRollDisplay(r,'k20 (GM)',[r],0,20);
+  // Only send to chat as "GM (tajny)" visible to all, but could also be private
+  sendToAll({ type:'roll', nick:'GM 🔒', dice:'k20 (tajny)', rolls:[r], total:r, modifier:0, sides:20, isGM:true, ts:Date.now() });
+}
+
+/* ══════════════════════════════════════════════════
+   CHARACTER SHEET
+══════════════════════════════════════════════════ */
+function buildStatsRow() {
+  const row = document.getElementById('stats-row');
+  row.innerHTML = '';
+  SK.forEach((k,i) => {
+    const d = document.createElement('div');
+    d.className = 'stat-box';
+    d.title = `Kliknij aby rzucić k20+${SN[i]}`;
+    d.innerHTML = `
+      <span class="sn">${SN[i]}</span>
+      <span class="sm" id="mod-${k}">+0</span>
+      <input class="ss" type="number" id="stat-${k}" value="10" min="1" max="30"
+        onchange="recalcMod('${k}')">
+    `;
+    d.onclick = e => { if(e.target.tagName!=='INPUT') statRoll(k,SN[i]); };
+    row.appendChild(d);
+  });
+}
+
+function recalcMod(k) {
+  const v = parseInt(document.getElementById('stat-'+k)?.value)||10;
+  const m = getMod(v);
+  const el = document.getElementById('mod-'+k);
+  if(el) el.textContent = ms(m);
+  updateSkills();
+}
+
+function buildSkillsGrid() {
+  const g = document.getElementById('skills-grid');
+  g.innerHTML = '';
+  SKILLS.forEach(skill => {
+    const d = document.createElement('div');
+    d.className = 'sk-row';
+    d.dataset.stat = skill.s;
+    d.dataset.name = skill.n;
+    d.title = `Test: ${skill.n}`;
+    d.innerHTML = `<div class="pd"></div><span>${skill.n}</span><span class="sv">+0</span>`;
+    d.onclick = () => skillRoll(skill);
+    d.querySelector('.pd').onclick = e => { e.stopPropagation(); e.target.classList.toggle('on'); updateSkills(); };
+    g.appendChild(d);
+  });
+  updateSkills();
+}
+
+function updateSkills() {
+  const prof = parseInt(document.getElementById('cs-prof')?.value)||2;
+  document.querySelectorAll('.sk-row').forEach(row => {
+    const s = row.dataset.stat;
+    const score = parseInt(document.getElementById('stat-'+s)?.value)||10;
+    const m = getMod(score) + (row.querySelector('.pd')?.classList.contains('on') ? prof : 0);
+    const sv = row.querySelector('.sv');
+    if(sv) sv.textContent = ms(m);
+  });
+}
+
+function syncHP() {
+  const max = parseInt(document.getElementById('cs-hpmax')?.value)||10;
+  const cur = parseInt(document.getElementById('cs-hpcur')?.value)||10;
+  if (G.players[G.nick]) {
+    if (!G.players[G.nick].sheet) G.players[G.nick].sheet = {};
+    G.players[G.nick].sheet.hp_max = max;
+    G.players[G.nick].sheet.hp_cur = cur;
+    renderPlayers();
+  }
+}
+
+function gatherSheet() {
+  const stats = {};
+  SK.forEach(k => { stats[k] = parseInt(document.getElementById('stat-'+k)?.value)||10; });
+  const skillProfs = {};
+  document.querySelectorAll('.sk-row').forEach(r => {
+    skillProfs[r.dataset.name] = r.querySelector('.pd')?.classList.contains('on')||false;
+  });
+  return {
+    name: v('cs-name'), class: v('cs-class'), race: v('cs-race'), bg: v('cs-bg'),
+    prof: parseInt(v('cs-prof'))||2, speed: v('cs-speed'),
+    stats,
+    hp_max: parseInt(v('cs-hpmax'))||10, hp_cur: parseInt(v('cs-hpcur'))||10,
+    hp_tmp: parseInt(v('cs-hptmp'))||0,
+    ac: parseInt(v('cs-ac'))||10, initiative: v('cs-init'), saves: v('cs-saves'),
+    attacks: v('cs-attacks'), equip: v('cs-equip'),
+    feats: v('cs-feats'), notes: v('cs-notes'), skillProfs,
+  };
+}
+
+function v(id) { return document.getElementById(id)?.value||''; }
+
+function applySheet(s) {
+  if(!s) return;
+  const set = (id,val) => { const e=document.getElementById(id); if(e) e.value=val??''; };
+  set('cs-name',s.name); set('cs-class',s.class); set('cs-race',s.race); set('cs-bg',s.bg);
+  set('cs-prof',s.prof||2); set('cs-speed',s.speed);
+  set('cs-hpmax',s.hp_max||10); set('cs-hpcur',s.hp_cur||10); set('cs-hptmp',s.hp_tmp||0);
+  set('cs-ac',s.ac||10); set('cs-init',s.initiative||'+0'); set('cs-saves',s.saves||'');
+  set('cs-attacks',s.attacks||''); set('cs-equip',s.equip||'');
+  set('cs-feats',s.feats||''); set('cs-notes',s.notes||'');
+  if(s.stats) SK.forEach(k=>{ set('stat-'+k,s.stats[k]||10); recalcMod(k); });
+  if(s.skillProfs) {
+    document.querySelectorAll('.sk-row').forEach(r=>{
+      const dot=r.querySelector('.pd');
+      if(dot) dot.classList.toggle('on',!!s.skillProfs[r.dataset.name]);
+    });
+    updateSkills();
+  }
+}
+
+function loadLocalSheet() {
+  const saved = localStorage.getItem('sheet:'+G.sessionCode+':'+G.nick);
+  if(saved) { try { applySheet(JSON.parse(saved)); } catch(e){} }
+}
+
+function shareSheet() {
+  const sheet = gatherSheet();
+  localStorage.setItem('sheet:'+G.sessionCode+':'+G.nick, JSON.stringify(sheet));
+  // Update local
+  if(!G.players[G.nick]) G.players[G.nick] = { nick:G.nick, isGM:G.role==='gm' };
+  G.players[G.nick].fullSheet = sheet;
+  G.players[G.nick].sheet = { hp_max:sheet.hp_max, hp_cur:sheet.hp_cur, class:sheet.class };
+  renderPlayers();
+
+  sendToAll({ type:'sheet-update', nick:G.nick, sheet });
+  appendSysMsg('Karta postaci wysłana do GM ✓');
+}
+
+function statRoll(k, name) {
+  const score = parseInt(document.getElementById('stat-'+k)?.value)||10;
+  const mod = getMod(score);
+  const r = Math.floor(Math.random()*20)+1;
+  const total = r+mod;
+  updateRollDisplay(total,`k20 ${name}`,[r],mod,20);
+  sendToAll({ type:'roll', nick:G.nick, dice:`k20 ${name}`, rolls:[r], total, modifier:mod, sides:20, isGM:G.role==='gm', ts:Date.now() });
+  showTab('chat');
+}
+
+function skillRoll(skill) {
+  const prof=parseInt(v('cs-prof'))||2;
+  const score=parseInt(document.getElementById('stat-'+skill.s)?.value)||10;
+  let mod=getMod(score);
+  document.querySelectorAll('.sk-row').forEach(r=>{
+    if(r.dataset.name===skill.n && r.querySelector('.pd')?.classList.contains('on')) mod+=prof;
+  });
+  const r=Math.floor(Math.random()*20)+1;
+  const total=r+mod;
+  updateRollDisplay(total,`k20 ${skill.n}`,[r],mod,20);
+  sendToAll({ type:'roll', nick:G.nick, dice:`k20 ${skill.n}`, rolls:[r], total, modifier:mod, sides:20, isGM:G.role==='gm', ts:Date.now() });
+  showTab('chat');
+}
+
+/* ══════════════════════════════════════════════════
+   PLAYERS LIST
+══════════════════════════════════════════════════ */
+function renderPlayers() {
+  const el = document.getElementById('players-list');
+  el.innerHTML = '';
+  let count = 0;
+  Object.values(G.players).forEach((p, i) => {
+    count++;
+    const sheet = p.sheet;
+    const hpMax = sheet?.hp_max||10;
+    const hpCur = sheet?.hp_cur??hpMax;
+    const pct = Math.max(0,Math.min(100,(hpCur/hpMax)*100));
+    const color = AV_COLORS[Math.abs([...p.nick].reduce((a,c)=>a+c.charCodeAt(0),0))%AV_COLORS.length];
+    const canClick = G.role==='gm' && p.nick!==G.nick && p.fullSheet;
+
+    const d = document.createElement('div');
+    d.className = 'pp' + (canClick?' clickable':'');
+    d.innerHTML = `
+      <div class="av" style="background:${color}22;color:${color}">${p.nick[0].toUpperCase()}</div>
+      <div class="pp-info">
+        <div class="pp-name">${esc(p.nick)}${p.isGM?' 👑':''}</div>
+        <div class="pp-class">${esc(sheet?.class||'—')}</div>
+        ${sheet?`<div class="hp-track"><div class="hp-fill" style="width:${pct}%"></div></div>`:''}
+      </div>
+      <div class="connecting-dot"></div>
+    `;
+    if(canClick) d.onclick=()=>openFullSheet(p.nick);
+    el.appendChild(d);
+  });
+  document.getElementById('b-count').textContent = `👤 ${count}`;
+}
+
+/* ══════════════════════════════════════════════════
+   GM SHEET VIEW
+══════════════════════════════════════════════════ */
+function renderGMGrid() {
+  const grid = document.getElementById('gm-grid');
+  const entries = Object.values(G.players).filter(p=>!p.isGM);
+  if(!entries.length) { grid.innerHTML='<div style="color:rgba(242,230,196,0.4)">Brak graczy z kartami postaci.</div>'; return; }
+  grid.innerHTML = entries.map(p => {
+    const s = p.fullSheet;
+    return `<div class="mc" onclick="openFullSheet('${esc(p.nick)}')">
+      <div class="mc-name">${esc(s?.name||p.nick)}</div>
+      <div class="mc-class">${esc(s?.class||'—')} · ${esc(s?.race||'—')}</div>
+      ${s?`<div class="mc-badges">
+        <span class="mc-badge">HP: ${s.hp_cur}/${s.hp_max}</span>
+        <span class="mc-badge">KP: ${s.ac}</span>
+        <span class="mc-badge">Init: ${s.initiative||'+0'}</span>
+      </div>`:'<div style="font-size:0.75rem;color:#aaa;margin-top:0.3rem;font-style:italic">Brak karty</div>'}
+    </div>`;
+  }).join('');
+}
+
+function openFullSheet(nick) {
+  const p = G.players[nick];
+  const s = p?.fullSheet;
+  document.getElementById('sheet-modal-title').textContent = `📜 ${s?.name||nick} — Karta Postaci`;
+
+  if(!s) {
+    document.getElementById('sheet-modal-body').innerHTML='<p style="color:#666;font-style:italic">Gracz nie udostępnił jeszcze karty postaci.</p>';
+    openModal('sheet-modal'); return;
+  }
+
+  const statBoxes = SK.map((k,i) => {
+    const m=getMod(s.stats?.[k]||10);
+    return `<div style="text-align:center;border:1px solid var(--parch-dark);padding:0.3rem;border-radius:3px;background:rgba(255,255,255,0.2)">
+      <div style="font-family:'Cinzel',serif;font-size:0.5rem;color:var(--blood)">${SN[i]}</div>
+      <div style="font-weight:700;font-size:1rem;font-family:'Cinzel',serif">${ms(m)}</div>
+      <div style="font-size:0.7rem;color:#888">${s.stats?.[k]||10}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('sheet-modal-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;margin-bottom:0.75rem;font-size:0.9rem">
+      <div><strong style="font-family:'Cinzel',serif;font-size:0.58rem;color:var(--blood);display:block">KLASA</strong>${esc(s.class||'—')}</div>
+      <div><strong style="font-family:'Cinzel',serif;font-size:0.58rem;color:var(--blood);display:block">RASA</strong>${esc(s.race||'—')}</div>
+      <div><strong style="font-family:'Cinzel',serif;font-size:0.58rem;color:var(--blood);display:block">TŁO</strong>${esc(s.bg||'—')}</div>
+      <div><strong style="font-family:'Cinzel',serif;font-size:0.58rem;color:var(--blood);display:block">PRĘDKOŚĆ</strong>${esc(s.speed||'—')}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.4rem;margin-bottom:0.75rem">
+      <div style="text-align:center;border:1px solid var(--parch-dark);padding:0.3rem;border-radius:3px;background:rgba(255,255,255,0.2)">
+        <div style="font-family:'Cinzel',serif;font-size:0.55rem;color:var(--blood)">HP</div>
+        <div style="font-size:1.1rem;font-weight:700;font-family:'Cinzel',serif">${s.hp_cur}/${s.hp_max}</div>
+      </div>
+      <div style="text-align:center;border:1px solid var(--parch-dark);padding:0.3rem;border-radius:3px;background:rgba(255,255,255,0.2)">
+        <div style="font-family:'Cinzel',serif;font-size:0.55rem;color:var(--blood)">KP</div>
+        <div style="font-size:1.1rem;font-weight:700;font-family:'Cinzel',serif">${s.ac}</div>
+      </div>
+      <div style="text-align:center;border:1px solid var(--parch-dark);padding:0.3rem;border-radius:3px;background:rgba(255,255,255,0.2)">
+        <div style="font-family:'Cinzel',serif;font-size:0.55rem;color:var(--blood)">INIT</div>
+        <div style="font-size:1.1rem;font-weight:700;font-family:'Cinzel',serif">${s.initiative||'+0'}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0.3rem;margin-bottom:0.75rem">${statBoxes}</div>
+    ${s.attacks?`<div style="margin-bottom:0.6rem"><strong style="font-family:'Cinzel',serif;font-size:0.58rem;color:var(--blood);display:block;margin-bottom:0.2rem">ATAKI & ZAKLĘCIA</strong><div style="font-size:0.85rem;white-space:pre-wrap">${esc(s.attacks)}</div></div>`:''}
+    ${s.equip?`<div style="margin-bottom:0.6rem"><strong style="font-family:'Cinzel',serif;font-size:0.58rem;color:var(--blood);display:block;margin-bottom:0.2rem">EKWIPUNEK</strong><div style="font-size:0.85rem;white-space:pre-wrap">${esc(s.equip)}</div></div>`:''}
+    ${s.feats?`<div style="margin-bottom:0.6rem"><strong style="font-family:'Cinzel',serif;font-size:0.58rem;color:var(--blood);display:block;margin-bottom:0.2rem">ZDOLNOŚCI</strong><div style="font-size:0.85rem;white-space:pre-wrap">${esc(s.feats)}</div></div>`:''}
+    <div style="margin-top:0.9rem;text-align:center">
+      <button class="btn btn-blood btn-sm" onclick="gmEditHP('${esc(nick)}')">✏️ Zmień HP</button>
+    </div>
+  `;
+  openModal('sheet-modal');
+}
+
+function gmEditHP(nick) {
+  const p = G.players[nick];
+  if(!p?.fullSheet) return;
+  const delta = prompt(`HP dla ${nick} — podaj zmianę (np. -5, +10) lub nową wartość:`);
+  if(delta===null) return;
+
+  let newHP;
+  if(delta.startsWith('+')||delta.startsWith('-')) newHP=(p.fullSheet.hp_cur||0)+parseInt(delta);
+  else newHP=parseInt(delta);
+  newHP=Math.max(0,Math.min(p.fullSheet.hp_max,newHP));
+
+  if(G.players[nick].fullSheet) G.players[nick].fullSheet.hp_cur=newHP;
+  if(G.players[nick].sheet) G.players[nick].sheet.hp_cur=newHP;
+  renderPlayers();
+
+  const hpMsg = { type:'hp-update', nick, hp_cur:newHP, hp_max:p.fullSheet.hp_max };
+  broadcast(hpMsg);
+  appendSysMsg(`GM zmienił HP ${nick}: ${newHP}/${p.fullSheet.hp_max}`);
+  closeModal('sheet-modal');
+}
+
+/* ══════════════════════════════════════════════════
+   INITIATIVE
+══════════════════════════════════════════════════ */
+function openInitModal() {
+  const ed = document.getElementById('init-editor');
+  let html = '<div style="display:grid;gap:0.4rem">';
+  Object.values(G.players).forEach(p => {
+    const ex = G.initiative.find(i=>i.name===p.nick);
+    html += `<div style="display:flex;align-items:center;gap:0.5rem">
+      <span style="flex:1;font-size:0.85rem;color:var(--parch)">${esc(p.nick)}${p.isGM?' 👑':''}</span>
+      <input type="number" id="ini-${esc(p.nick)}" value="${ex?.val??''}" placeholder="ini"
+        style="width:55px;text-align:center;background:rgba(0,0,0,0.4);border-color:rgba(200,153,42,0.2);color:var(--gold);font-family:'Cinzel',serif;padding:0.3rem">
+      <button class="btn btn-ghost btn-sm" onclick="autoRollOne('${esc(p.nick)}')">🎲</button>
+    </div>`;
+  });
+  html += `<div style="margin-top:0.65rem;padding-top:0.65rem;border-top:1px solid rgba(200,153,42,0.15)">
+    <div style="font-family:'Cinzel',serif;font-size:0.62rem;color:var(--ember);margin-bottom:0.35rem;letter-spacing:0.1em">DODAJ NPC / POTWORA</div>
+    <div style="display:flex;gap:0.4rem">
+      <input type="text" id="npc-n" placeholder="Nazwa" style="background:rgba(0,0,0,0.4);border-color:rgba(200,153,42,0.15);color:var(--parch)">
+      <input type="number" id="npc-v" placeholder="Ini" style="width:55px;background:rgba(0,0,0,0.4);border-color:rgba(200,153,42,0.15);color:var(--gold);font-family:'Cinzel',serif;text-align:center;padding:0.3rem">
+      <button class="btn btn-gold btn-sm" onclick="addNPCtoInit()">+</button>
+    </div>
+  </div></div>`;
+  ed.innerHTML = html;
+  openModal('init-modal');
+}
+
+function autoRollOne(nick) {
+  const p=G.players[nick];
+  const dex=p?.fullSheet?.stats?.dex||10;
+  const r=Math.floor(Math.random()*20)+1+getMod(dex);
+  const el=document.getElementById('ini-'+nick);
+  if(el) el.value=r;
+}
+
+function autoRollAll() {
+  Object.keys(G.players).forEach(n=>autoRollOne(n));
+}
+
+function addNPCtoInit() {
+  const name=document.getElementById('npc-n')?.value?.trim();
+  const val=parseInt(document.getElementById('npc-v')?.value)||0;
+  if(!name) return;
+  const wrap=document.querySelector('#init-editor > div');
+  const d=document.createElement('div');
+  d.style.cssText='display:flex;align-items:center;gap:0.5rem';
+  d.innerHTML=`
+    <span style="flex:1;font-size:0.85rem;color:var(--parch)">${esc(name)} <span style="color:var(--ember);font-size:0.7rem">(NPC)</span></span>
+    <input type="number" data-npc="${esc(name)}" value="${val}" style="width:55px;text-align:center;background:rgba(0,0,0,0.4);border-color:rgba(200,153,42,0.2);color:var(--gold);font-family:'Cinzel',serif;padding:0.3rem">
+    <button class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()">✕</button>
+  `;
+  wrap.appendChild(d);
+  document.getElementById('npc-n').value='';
+  document.getElementById('npc-v').value='';
+}
+
+function saveInit() {
+  const list=[];
+  // players
+  Object.keys(G.players).forEach(nick=>{
+    const el=document.getElementById('ini-'+nick);
+    if(!el) return;
+    const val=parseInt(el.value);
+    if(!isNaN(val)) list.push({name:nick,val,isNPC:false});
+  });
+  // NPCs
+  document.querySelectorAll('#init-editor [data-npc]').forEach(el=>{
+    const val=parseInt(el.value);
+    if(!isNaN(val)) list.push({name:el.dataset.npc,val,isNPC:true});
+  });
+  list.sort((a,b)=>b.val-a.val);
+  G.initiative=list; G.initTurn=0;
+  renderInitSidebar();
+
+  const msg = { type:'initiative', list, turn:0 };
+  if(G.role==='gm') broadcast(msg);
+  else send(gmConn,{type:'relay',payload:msg});
+  appendSysMsg('Kolejność inicjatywy zaktualizowana');
+  closeModal('init-modal');
+}
+
+function renderInitSidebar() {
+  const el=document.getElementById('init-sidebar');
+  if(!G.initiative.length) {
+    el.innerHTML='<li class="init-item" style="color:rgba(242,230,196,0.3);font-size:0.75rem">Brak inicjatywy</li>';
+    return;
+  }
+  el.innerHTML=G.initiative.map((item,i)=>`
+    <li class="init-item${i===G.initTurn?' cur':''}">
+      <span>${item.isNPC?'🧙':'⚔️'} ${esc(item.name)}</span>
+      <span class="iv">${item.val}</span>
+    </li>`).join('');
+}
+
+function nextTurn() {
+  if(!G.initiative.length) return;
+  G.initTurn=(G.initTurn+1)%G.initiative.length;
+  renderInitSidebar();
+  const cur=G.initiative[G.initTurn];
+  if(cur) {
+    const msg={type:'next-turn',turn:G.initTurn};
+    if(G.role==='gm') broadcast(msg);
+    appendSysMsg(`⚡ Tura: ${cur.name}`);
+  }
+}
+
+function clearInit() {
+  G.initiative=[]; G.initTurn=0;
+  renderInitSidebar();
+  if(G.role==='gm') broadcast({type:'initiative',list:[],turn:0});
+}
+
+/* ══════════════════════════════════════════════════
+   CONDITIONS
+══════════════════════════════════════════════════ */
+function addCond() {
+  const sel=document.getElementById('cond-sel');
+  const c=sel.value; if(!c) return;
+  if(!G.conditions.includes(c)) { G.conditions.push(c); renderConditions(); }
+  sel.value='';
+}
+function removeCond(c) { G.conditions=G.conditions.filter(x=>x!==c); renderConditions(); }
+function renderConditions() {
+  document.getElementById('my-conds').innerHTML=G.conditions.map(c=>
+    `<span class="ctag" onclick="removeCond('${esc(c)}')" title="Kliknij aby usunąć">${esc(c)} ✕</span>`
+  ).join('');
+}
+
+/* ══════════════════════════════════════════════════
+   TABS
+══════════════════════════════════════════════════ */
+function showTab(id, btn) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('on'));
+  if(btn) btn.classList.add('on');
+  else document.querySelectorAll('.tab').forEach(t=>{ if(t.dataset.t===id) t.classList.add('on'); });
+  const pane=document.getElementById('pane-'+id);
+  if(pane) pane.classList.add('on');
+  if(id==='gm') renderGMGrid();
+}
+
+/* ══════════════════════════════════════════════════
+   MODALS
+══════════════════════════════════════════════════ */
+function openModal(id)  { document.getElementById(id)?.classList.add('open'); }
+function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
+document.addEventListener('click', e=>{ if(e.target.classList.contains('overlay')) e.target.classList.remove('open'); });
+
+/* ══════════════════════════════════════════════════
+   CONNECTING OVERLAY
+══════════════════════════════════════════════════ */
+function showConnecting(txt) {
+  document.getElementById('conn-text').textContent = txt||'Łączę...';
+  document.getElementById('connecting-screen').classList.add('show');
+}
+function hideConnecting() {
+  document.getElementById('connecting-screen').classList.remove('show');
+}
+
+/* ══════════════════════════════════════════════════
+   COPY CODE & LEAVE
+══════════════════════════════════════════════════ */
+function copyCode() {
+  navigator.clipboard.writeText(G.sessionCode).then(()=>{
+    const el=document.getElementById('b-code');
+    el.textContent='✓ Skopiowano!';
+    setTimeout(()=>el.textContent='📜 '+G.sessionCode,1500);
+  });
+}
+
+function leaveGame() {
+  if(!confirm('Opuścić sesję?')) return;
+  if(peer) { peer.destroy(); peer=null; }
+  gmConn=null; playerConns={};
+  G={role:'gm',nick:'',sessionCode:'',myPeerId:'',players:{},initiative:[],initTurn:0,conditions:[]};
+
+  document.getElementById('topbar').style.display='none';
+  document.getElementById('game-wrap').style.display='none';
+  document.getElementById('lobby').style.display='flex';
+  document.getElementById('chat-log').innerHTML='';
+  document.getElementById('lobby-status').innerHTML='';
+  document.getElementById('nick-in').value='';
+  document.getElementById('code-in').value='';
+  pickRole('gm');
+}
+
+/* ══════════════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════════════ */
+function esc(s) {
+  if(!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* Init on load */
+window.addEventListener('load',()=>{
+  buildStatsRow();
+  buildSkillsGrid();
+});
+</script>
+</body>
+</html>
